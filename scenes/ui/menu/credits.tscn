@@ -202,9 +202,8 @@ github.com/P1X-in/tanks-of-freedom-ii
 Original code and graphics: czlowiekimadlo
 Control icons: KenneyNL (CC0)
  
-Temporary music/sound, to be replaced:
-Juan \"reduz\" Linietsky (CC BY 4.0)
-QmYaan / Grand Beats (CC BY-SA 4.0)
+Original soundtrack: procedurally generated
+for ORBITFALL (tools/gen_soundtrack.py)
  
  
 Built with Godot Engine"

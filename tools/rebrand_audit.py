@@ -34,11 +34,9 @@ PENDING_BINARY_BRAND = {
         # шрифты — MIT/легальные ассеты, их замена это арт-направление, а не де-брендинг
     ],
     'аудио оригинала (НЕ ДОЛЖНО попасть в публичный релиз — см. IDENTITY §7)': [
-        *[f'assets/audio/soundtrack/{n}' for n in [
-            'grand_beats_110.ogg', 'grand_beats_menu_soundtrack.ogg',
-            'grand_beats_soundtrack_1_metal.ogg', 'reduz_all_star_champion_sheep.ogg',
-            'reduz_capybara_love.ogg', 'reduz_like_a_whale.ogg',
-            'reduz_the_sorrows_of_a_crab.ogg']],
+        # ЗАМЕНЕНО 2026-09-17: весь аудио-слой (8 треков OST + 21 SFX) перегенерирован
+        # процедурно (tools/gen_soundtrack.py, tools/gen_sfx.py) — оригинальная работа
+        # проекта, никаких CC BY/CC BY-SA обязательств не осталось.
     ],
 }
 
