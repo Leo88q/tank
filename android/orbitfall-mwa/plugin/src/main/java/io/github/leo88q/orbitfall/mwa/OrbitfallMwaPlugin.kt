@@ -71,6 +71,38 @@ class OrbitfallMwaPlugin(godot: Godot) : GodotPlugin(godot) {
         launchProxy("disconnect", "")
     }
 
+    // ---- orbitfall-match program (devnet), single-signer ops via MWA ----
+
+    @UsedByGodot
+    fun matchCreate(stakeLamports: Long, timeoutSec: Long) {
+        launchProxy("tx_create", """{"stake":$stakeLamports,"timeout":$timeoutSec}""")
+    }
+
+    @UsedByGodot
+    fun matchJoin(creatorB58: String) {
+        launchProxy("tx_join", """{"creator":"$creatorB58"}""")
+    }
+
+    @UsedByGodot
+    fun matchConsent(creatorB58: String, winner: Int) {
+        launchProxy("tx_consent", """{"creator":"$creatorB58","winner":$winner}""")
+    }
+
+    @UsedByGodot
+    fun matchSettle(creatorB58: String, joinerB58: String) {
+        launchProxy("tx_settle", """{"creator":"$creatorB58","joiner":"$joinerB58"}""")
+    }
+
+    @UsedByGodot
+    fun matchRefund(creatorB58: String, joinerB58: String) {
+        launchProxy("tx_refund", """{"creator":"$creatorB58","joiner":"$joinerB58"}""")
+    }
+
+    @UsedByGodot
+    fun matchCancel(creatorB58: String) {
+        launchProxy("tx_cancel", """{"creator":"$creatorB58"}""")
+    }
+
     private fun launchProxy(op: String, payload: String) {
         val activity = getActivity() ?: return
         activity.runOnUiThread {
