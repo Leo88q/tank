@@ -33,6 +33,14 @@ describe("orbitfall-match", () => {
     systemProgram: anchor.web3.SystemProgram.programId,
   });
 
+  const settleAccounts = (pda: PublicKey, vault: PublicKey) => ({
+    matchState: pda,
+    creator: creator.publicKey,
+    joiner: joiner.publicKey,
+    vault,
+    systemProgram: anchor.web3.SystemProgram.programId,
+  });
+
   before(async () => {
     for (const kp of [creator, joiner]) {
       const sig = await provider.connection.requestAirdrop(
@@ -43,7 +51,7 @@ describe("orbitfall-match", () => {
     }
   });
 
-  it("create -> join -> settle (consensual, winner = joiner)", async () => {
+  it("create -> join -> consent x2 -> settle (winner = joiner)", async () => {
     const pda = matchPda(creator.publicKey);
     const vault = vaultPda(creator.publicKey);
 
@@ -67,25 +75,35 @@ describe("orbitfall-match", () => {
     assert.strictEqual(st.status, 1);
     assert.ok(st.deadline.toNumber() > 0);
 
-    const before = new anchor.BN(await provider.connection.getBalance(joiner.publicKey));
     await program.methods
-      .settle(1)
-      .accounts({
-        creator: creator.publicKey,
-        joiner: joiner.publicKey,
-        ...accounts(pda, vault),
-      })
-      .signers([creator, joiner])
+      .consent(1)
+      .accounts({ player: creator.publicKey, matchState: pda })
+      .signers([creator])
       .rpc();
-    const after = new anchor.BN(await provider.connection.getBalance(joiner.publicKey));
-    // winner gets the pot (minus tx fees)
+    await program.methods
+      .consent(1)
+      .accounts({ player: joiner.publicKey, matchState: pda })
+      .signers([joiner])
+      .rpc();
+
+    const before = new anchor.BN(
+      await provider.connection.getBalance(joiner.publicKey)
+    );
+    await program.methods
+      .settle()
+      .accounts({ payer: joiner.publicKey, ...settleAccounts(pda, vault) })
+      .signers([joiner])
+      .rpc();
+    const after = new anchor.BN(
+      await provider.connection.getBalance(joiner.publicKey)
+    );
     assert.ok(after.gt(before.add(stake)));
 
     // account closed after settle
     await assert.rejects(program.account.matchState.fetch(pda));
   });
 
-  it("settle without joiner signature is rejected", async () => {
+  it("settle without consensus is rejected; stranger consent rejected", async () => {
     const pda = matchPda(creator.publicKey);
     const vault = vaultPda(creator.publicKey);
     await program.methods
@@ -99,28 +117,40 @@ describe("orbitfall-match", () => {
       .signers([joiner])
       .rpc();
 
+    // only creator consented -> no consensus
+    await program.methods
+      .consent(0)
+      .accounts({ player: creator.publicKey, matchState: pda })
+      .signers([creator])
+      .rpc();
     await assert.rejects(
       program.methods
-        .settle(0)
-        .accounts({
-          creator: creator.publicKey,
-          joiner: joiner.publicKey,
-          ...accounts(pda, vault),
-        })
-        .signers([creator]) // joiner did NOT sign
-        .rpc(),
-      /.*[Ss]ignature.*/
+        .settle()
+        .accounts({ payer: creator.publicKey, ...settleAccounts(pda, vault) })
+        .signers([creator])
+        .rpc()
     );
 
-    // cleanup: settle consensually so the PDA is closed for later tests
+    // stranger cannot consent
+    const stranger = Keypair.generate();
+    await assert.rejects(
+      program.methods
+        .consent(0)
+        .accounts({ player: stranger.publicKey, matchState: pda })
+        .signers([stranger])
+        .rpc()
+    );
+
+    // cleanup: joiner agrees -> settle
     await program.methods
-      .settle(0)
-      .accounts({
-        creator: creator.publicKey,
-        joiner: joiner.publicKey,
-        ...accounts(pda, vault),
-      })
-      .signers([creator, joiner])
+      .consent(0)
+      .accounts({ player: joiner.publicKey, matchState: pda })
+      .signers([joiner])
+      .rpc();
+    await program.methods
+      .settle()
+      .accounts({ payer: creator.publicKey, ...settleAccounts(pda, vault) })
+      .signers([creator])
       .rpc();
   });
 
@@ -139,13 +169,17 @@ describe("orbitfall-match", () => {
       .accounts({ creator: c2.publicKey, ...accounts(pda, vault) })
       .signers([c2])
       .rpc();
-    const before = new anchor.BN(await provider.connection.getBalance(c2.publicKey));
+    const before = new anchor.BN(
+      await provider.connection.getBalance(c2.publicKey)
+    );
     await program.methods
       .cancel()
       .accounts({ creator: c2.publicKey, ...accounts(pda, vault) })
       .signers([c2])
       .rpc();
-    const after = new anchor.BN(await provider.connection.getBalance(c2.publicKey));
+    const after = new anchor.BN(
+      await provider.connection.getBalance(c2.publicKey)
+    );
     assert.ok(after.gt(before));
   });
 
@@ -182,7 +216,9 @@ describe("orbitfall-match", () => {
 
     await sleep(62_000);
 
-    const cBefore = new anchor.BN(await provider.connection.getBalance(creator.publicKey));
+    const cBefore = new anchor.BN(
+      await provider.connection.getBalance(creator.publicKey)
+    );
     await program.methods
       .timeoutRefund()
       .accounts({
@@ -195,7 +231,9 @@ describe("orbitfall-match", () => {
       })
       .signers([joiner])
       .rpc();
-    const cAfter = new anchor.BN(await provider.connection.getBalance(creator.publicKey));
+    const cAfter = new anchor.BN(
+      await provider.connection.getBalance(creator.publicKey)
+    );
     assert.ok(cAfter.gt(cBefore.add(stake.sub(new anchor.BN(1)))));
   }).timeout(120_000);
 });
