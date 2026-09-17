@@ -11,7 +11,7 @@ var integration_data = {
 	"player_id": null,
 	"pin": null,
 	"integrations": {
-		"api.orbitfall.example": {
+		"api.dropfire.example": {
 			"player_id": null,
 			"pin": null,
 		}
@@ -35,9 +35,9 @@ func load_data_from_file():
 	for key in loaded_data:
 		self.integration_data[key] = loaded_data[key]
 
-	if self.integration_data["player_id"] != null and self.integration_data["integrations"]["api.orbitfall.example"]["player_id"] == null:
-		self.integration_data["integrations"]["api.orbitfall.example"]["player_id"] = self.integration_data["player_id"]
-		self.integration_data["integrations"]["api.orbitfall.example"]["pin"] = self.integration_data["pin"]
+	if self.integration_data["player_id"] != null and self.integration_data["integrations"]["api.dropfire.example"]["player_id"] == null:
+		self.integration_data["integrations"]["api.dropfire.example"]["player_id"] = self.integration_data["player_id"]
+		self.integration_data["integrations"]["api.dropfire.example"]["pin"] = self.integration_data["pin"]
 
 
 func is_registered():

@@ -2,7 +2,7 @@ extends Object
 class_name OnlineConnector
 
 var API_PORT: int = 443
-var API_LOCATION: String = "api.orbitfall.example"
+var API_LOCATION: String = "api.dropfire.example"
 const API_USE_SSL: bool = true
 const API_PRESENT_VERSION: String = "1.0.0"
 

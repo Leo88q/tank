@@ -10,8 +10,8 @@
 
 ## 1. Название игры
 
-**Рабочее название: `ORBITFALL`** (кандидаты на выбор: «Orbitfall», «Dropfire: Corporate
-Wars», «Volt & Steel»). Подзаголовок-слоган: *«Four corporations. One continent. Zero
+**ФИНАЛЬНОЕ название (решение человека 2026-09-17): `Dropfire: Corporate Wars`**
+(тайтл/вордмарк — `DROPFIRE`; выбрано после трейдмарк-находки по ORBITFALL™). Подзаголовок-слоган: *«Four corporations. One continent. Zero
 mercy.»*
 
 ⚠️ **ТРЕЙДМАРК-НАХОДКА 2026-09-17 (ждёт решения человека):** `Orbitfall™` — товарный

@@ -40,7 +40,7 @@ func _ready() -> void:
 
 	btn_sign = Button.new()
 	btn_sign.text = "SIGN TEST"
-	btn_sign.pressed.connect(func(): WalletBridge.sign_message("ORBITFALL wallet check " + Time.get_datetime_string_from_system()))
+	btn_sign.pressed.connect(func(): WalletBridge.sign_message("DROPFIRE wallet check " + Time.get_datetime_string_from_system()))
 	hbox.add_child(btn_sign)
 
 	btn_disconnect = Button.new()

@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Orbitfall (working title)"
+config/name="Dropfire: Corporate Wars"
 config/description="Turn-based strategy game."
 config/version="1.0.9"
 run/main_scene="res://scenes/main_menu/main_menu.tscn"
@@ -18,8 +18,8 @@ config/features=PackedStringArray("4.4")
 boot_splash/bg_color=Color(0, 0, 0, 1)
 boot_splash/use_filter=false
 boot_splash/image="res://assets/gui/splash.png"
-config/icon="res://assets/icons/orbitfall_icon1024.png"
-config/windows_native_icon="res://assets/icons/orbitfall_icon.ico"
+config/icon="res://assets/icons/dropfire_icon1024.png"
+config/windows_native_icon="res://assets/icons/dropfire_icon.ico"
 
 [audio]
 

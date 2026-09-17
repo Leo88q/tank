@@ -27,8 +27,8 @@ class MwaProxyActivity : ComponentActivity() {
 
         // Placeholder identity until the final web domain is chosen by the human
         // (see docs/rebrand/IDENTITY.md and PROJECT_STATUS open decisions).
-        private const val IDENTITY_URI = "https://orbitfall.example"
-        private const val IDENTITY_NAME = "ORBITFALL"
+        private const val IDENTITY_URI = "https://dropfire.example"
+        private const val IDENTITY_NAME = "DROPFIRE"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

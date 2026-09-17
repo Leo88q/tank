@@ -9,9 +9,9 @@ extends SettingsCategoryPanel
 var defaults: Dictionary = {
 	"game_port": 3959,
 	"discovery_port": 3960,
-	"online_domain": "api.orbitfall.example",
+	"online_domain": "api.dropfire.example",
 	"online_port": 443,
-	"relay_domain": "api.orbitfall.example",
+	"relay_domain": "api.dropfire.example",
 	"relay_port": 9959,
 }
 

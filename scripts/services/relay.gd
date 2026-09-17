@@ -1,7 +1,7 @@
 extends Node
 
 var RELAY_PORT: int = 9939
-var RELAY_URL: String = "api.orbitfall.example"
+var RELAY_URL: String = "api.dropfire.example"
 
 signal connection_failed
 signal connection_success
