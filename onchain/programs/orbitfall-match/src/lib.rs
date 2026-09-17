@@ -5,6 +5,9 @@
 //!   | timeout_refund (after deadline anyone refunds both stakes; match cancelled)
 //!   | cancel (while still Open, creator withdraws).
 //!
+//! Escrow lamports live in a data-less vault PDA (system transfers out of an
+//! account carrying data are rejected by the System program).
+//!
 //! Trust model: consensual settle (both signatures) + onchain timeout as the
 //! anti-grief backstop. Full deterministic onchain validation is Phase 5's
 //! decision point; this program intentionally stays minimal.
@@ -16,6 +19,8 @@ declare_id!("AeuAXhwzbULEoR3gi66RpFZNwDZx6i17i7gSgP1gUqeH");
 
 #[constant]
 pub const MATCH_SEED: &[u8] = b"match";
+#[constant]
+pub const VAULT_SEED: &[u8] = b"vault";
 
 #[program]
 pub mod orbitfall_match {
@@ -39,7 +44,7 @@ pub mod orbitfall_match {
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
                     from: ctx.accounts.creator.to_account_info(),
-                    to: m.to_account_info(),
+                    to: ctx.accounts.vault.to_account_info(),
                 },
             ),
             stake,
@@ -70,7 +75,7 @@ pub mod orbitfall_match {
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
                     from: ctx.accounts.joiner.to_account_info(),
-                    to: m.to_account_info(),
+                    to: ctx.accounts.vault.to_account_info(),
                 },
             ),
             m.stake,
@@ -98,15 +103,15 @@ pub mod orbitfall_match {
         };
 
         let seeds = &[
-            MATCH_SEED,
+            VAULT_SEED,
             m.creator.as_ref(),
-            &[m.bump],
+            &[ctx.bumps.vault],
         ];
         system_program::transfer(
             CpiContext::new_with_signer(
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
-                    from: m.to_account_info(),
+                    from: ctx.accounts.vault.to_account_info(),
                     to: winner_account,
                 },
                 &[&seeds[..]],
@@ -133,16 +138,16 @@ pub mod orbitfall_match {
         );
 
         let seeds = &[
-            MATCH_SEED,
+            VAULT_SEED,
             m.creator.as_ref(),
-            &[m.bump],
+            &[ctx.bumps.vault],
         ];
         for player in [&ctx.accounts.creator, &ctx.accounts.joiner] {
             system_program::transfer(
                 CpiContext::new_with_signer(
                     ctx.accounts.system_program.to_account_info(),
                     system_program::Transfer {
-                        from: m.to_account_info(),
+                        from: ctx.accounts.vault.to_account_info(),
                         to: player.to_account_info(),
                     },
                     &[&seeds[..]],
@@ -164,15 +169,15 @@ pub mod orbitfall_match {
         require!(m.status == MatchStatus::Open as u8, MatchError::NotOpen);
 
         let seeds = &[
-            MATCH_SEED,
+            VAULT_SEED,
             m.creator.as_ref(),
-            &[m.bump],
+            &[ctx.bumps.vault],
         ];
         system_program::transfer(
             CpiContext::new_with_signer(
                 ctx.accounts.system_program.to_account_info(),
                 system_program::Transfer {
-                    from: m.to_account_info(),
+                    from: ctx.accounts.vault.to_account_info(),
                     to: ctx.accounts.creator.to_account_info(),
                 },
                 &[&seeds[..]],
@@ -195,6 +200,13 @@ pub struct CreateMatch<'info> {
         bump
     )]
     pub match_state: Account<'info, MatchState>,
+    /// CHECK: data-less escrow PDA; lamports-only system account
+    #[account(
+        mut,
+        seeds = [VAULT_SEED, creator.key().as_ref()],
+        bump
+    )]
+    pub vault: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -208,6 +220,13 @@ pub struct JoinMatch<'info> {
         bump = match_state.bump
     )]
     pub match_state: Account<'info, MatchState>,
+    /// CHECK: data-less escrow PDA
+    #[account(
+        mut,
+        seeds = [VAULT_SEED, match_state.creator.as_ref()],
+        bump
+    )]
+    pub vault: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -232,6 +251,13 @@ pub struct Settle<'info> {
         close = creator
     )]
     pub match_state: Account<'info, MatchState>,
+    /// CHECK: data-less escrow PDA
+    #[account(
+        mut,
+        seeds = [VAULT_SEED, match_state.creator.as_ref()],
+        bump
+    )]
+    pub vault: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -254,6 +280,13 @@ pub struct TimeoutRefund<'info> {
     /// CHECK: validated against match_state.joiner
     #[account(mut)]
     pub joiner: AccountInfo<'info>,
+    /// CHECK: data-less escrow PDA
+    #[account(
+        mut,
+        seeds = [VAULT_SEED, match_state.creator.as_ref()],
+        bump
+    )]
+    pub vault: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -271,6 +304,13 @@ pub struct Cancel<'info> {
         close = creator
     )]
     pub match_state: Account<'info, MatchState>,
+    /// CHECK: data-less escrow PDA
+    #[account(
+        mut,
+        seeds = [VAULT_SEED, match_state.creator.as_ref()],
+        bump
+    )]
+    pub vault: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 

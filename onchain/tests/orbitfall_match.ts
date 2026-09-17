@@ -21,8 +21,15 @@ describe("orbitfall-match", () => {
       program.programId
     )[0];
 
-  const accounts = (pda: PublicKey) => ({
+  const vaultPda = (creatorKey: PublicKey): PublicKey =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("vault"), creatorKey.toBuffer()],
+      program.programId
+    )[0];
+
+  const accounts = (pda: PublicKey, vault: PublicKey) => ({
     matchState: pda,
+    vault,
     systemProgram: anchor.web3.SystemProgram.programId,
   });
 
@@ -38,10 +45,11 @@ describe("orbitfall-match", () => {
 
   it("create -> join -> settle (consensual, winner = joiner)", async () => {
     const pda = matchPda(creator.publicKey);
+    const vault = vaultPda(creator.publicKey);
 
     await program.methods
       .createMatch(stake, new anchor.BN(3600))
-      .accounts({ creator: creator.publicKey, ...accounts(pda) })
+      .accounts({ creator: creator.publicKey, ...accounts(pda, vault) })
       .signers([creator])
       .rpc();
 
@@ -51,7 +59,7 @@ describe("orbitfall-match", () => {
 
     await program.methods
       .joinMatch()
-      .accounts({ joiner: joiner.publicKey, ...accounts(pda) })
+      .accounts({ joiner: joiner.publicKey, ...accounts(pda, vault) })
       .signers([joiner])
       .rpc();
 
@@ -65,7 +73,7 @@ describe("orbitfall-match", () => {
       .accounts({
         creator: creator.publicKey,
         joiner: joiner.publicKey,
-        ...accounts(pda),
+        ...accounts(pda, vault),
       })
       .signers([creator, joiner])
       .rpc();
@@ -79,14 +87,15 @@ describe("orbitfall-match", () => {
 
   it("settle without joiner signature is rejected", async () => {
     const pda = matchPda(creator.publicKey);
+    const vault = vaultPda(creator.publicKey);
     await program.methods
       .createMatch(stake, new anchor.BN(3600))
-      .accounts({ creator: creator.publicKey, ...accounts(pda) })
+      .accounts({ creator: creator.publicKey, ...accounts(pda, vault) })
       .signers([creator])
       .rpc();
     await program.methods
       .joinMatch()
-      .accounts({ joiner: joiner.publicKey, ...accounts(pda) })
+      .accounts({ joiner: joiner.publicKey, ...accounts(pda, vault) })
       .signers([joiner])
       .rpc();
 
@@ -96,7 +105,7 @@ describe("orbitfall-match", () => {
         .accounts({
           creator: creator.publicKey,
           joiner: joiner.publicKey,
-          ...accounts(pda),
+          ...accounts(pda, vault),
         })
         .signers([creator]) // joiner did NOT sign
         .rpc(),
@@ -109,7 +118,7 @@ describe("orbitfall-match", () => {
       .accounts({
         creator: creator.publicKey,
         joiner: joiner.publicKey,
-        ...accounts(pda),
+        ...accounts(pda, vault),
       })
       .signers([creator, joiner])
       .rpc();
@@ -123,16 +132,17 @@ describe("orbitfall-match", () => {
     );
     await provider.connection.confirmTransaction(sig);
     const pda = matchPda(c2.publicKey);
+    const vault = vaultPda(c2.publicKey);
 
     await program.methods
       .createMatch(stake, new anchor.BN(3600))
-      .accounts({ creator: c2.publicKey, ...accounts(pda) })
+      .accounts({ creator: c2.publicKey, ...accounts(pda, vault) })
       .signers([c2])
       .rpc();
     const before = await provider.connection.getBalance(c2.publicKey);
     await program.methods
       .cancel()
-      .accounts({ creator: c2.publicKey, ...accounts(pda) })
+      .accounts({ creator: c2.publicKey, ...accounts(pda, vault) })
       .signers([c2])
       .rpc();
     const after = await provider.connection.getBalance(c2.publicKey);
@@ -141,15 +151,16 @@ describe("orbitfall-match", () => {
 
   it("timeout path refunds both stakes", async () => {
     const pda = matchPda(creator.publicKey);
+    const vault = vaultPda(creator.publicKey);
     // minimal allowed timeout = 60s; wait it out on localnet
     await program.methods
       .createMatch(stake, new anchor.BN(60))
-      .accounts({ creator: creator.publicKey, ...accounts(pda) })
+      .accounts({ creator: creator.publicKey, ...accounts(pda, vault) })
       .signers([creator])
       .rpc();
     await program.methods
       .joinMatch()
-      .accounts({ joiner: joiner.publicKey, ...accounts(pda) })
+      .accounts({ joiner: joiner.publicKey, ...accounts(pda, vault) })
       .signers([joiner])
       .rpc();
 
@@ -162,6 +173,7 @@ describe("orbitfall-match", () => {
           matchState: pda,
           creator: creator.publicKey,
           joiner: joiner.publicKey,
+          vault,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .signers([joiner])
@@ -178,6 +190,7 @@ describe("orbitfall-match", () => {
         matchState: pda,
         creator: creator.publicKey,
         joiner: joiner.publicKey,
+        vault,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .signers([joiner])
