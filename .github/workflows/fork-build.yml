@@ -89,44 +89,47 @@ jobs:
           OUT=$("$HOME/godot-bin/godot" --headless --path . --script /tmp/diag.gd 2>&1 | grep -E 'ETC2=|RENDERER_' | tr '\n' ' ' | cut -c1-800)
           GREP=$(grep -A4 '^\[rendering\]' project.godot | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2000)
           echo "::notice::diag[${OUT}] project.godot[rendering section]::%0A${GREP}"
-      - name: Verify translations regenerated with new lore (no stale binaries)
+      - name: Verify translations (runtime check via get_message)
         run: |
           set +e
-          echo "--- assets/translations ---"; ls -la assets/translations/ || true
-          echo "--- translation-like files in .godot ---"; find .godot -iname '*translation*' 2>/dev/null | head || true
-          FAIL=0
-          FILES=$(ls assets/translations/*.translation 2>/dev/null)
-          if [ -z "$FILES" ]; then
-            echo "::error::No .translation files regenerated next to CSVs (csv_translation import did not write to res://) — will need CSV-path remap in project.godot"
-            FAIL=1
-          else
-            for f in $FILES; do
-              if grep -qaE 'Sapphire Dawn|Amber Noon|Ruby Dusk|Jade Twilight|Obsidian Night|Warlord Grim|Prince Tybalt' "$f"; then
-                echo "::error::Stale translation binary with old lore: $f"
-                FAIL=1
-              fi
-            done
-            grep -qa 'Meridian' assets/translations/core.en.en.translation || { echo "::error::core.en.en.translation lacks new lore marker (Meridian)"; FAIL=1; }
-            grep -qa 'Hale' assets/translations/common.en.en.translation || { echo "::error::common.en.en.translation lacks new lore marker (Hale)"; FAIL=1; }
+          # первоисточник — CSV — не должен содержать старый лор
+          if grep -rE 'Sapphire Dawn|Ruby Dusk|Jade Twilight|Amber Noon|Obsidian Night|Warlord Grim|Prince Tybalt|King Ludwig' assets/translations/*.csv; then
+            echo "::error::old lore found in translation CSV sources"
+            exit 1
           fi
-          if [ $FAIL -ne 0 ]; then
-            for f in assets/translations/core.en.en.translation assets/translations/common.en.en.translation; do
-              if [ -f "$f" ]; then
-                SZ=$(stat -c%s "$f")
-                COUNTS=""
-                for m in Hale Meridian Corvin Mori Vex Marshal Ferrovald Aurora Aurelian Ashfall; do
-                  C=$(grep -ao "$m" "$f" 2>/dev/null | wc -l)
-                  COUNTS="$COUNTS $m=$C"
-                done
-                echo "::notice::$f size=$SZ marker_counts:$COUNTS"
-                DUMP=$(strings -n 4 "$f" 2>/dev/null | grep -iE 'hale|meridian|marshal|combine|syndicate|concord|holdings|cell|corvin|voss|ferron|brandt|marchetti|renn|mori|verne|aurelian|vex' | head -40 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
-                echo "::notice::$f lore-strings dump::%0A${DUMP:-NONE}"
-              fi
-            done
-            exit $FAIL
+          cat > /tmp/tr_check.gd <<'GDEOF'
+          extends SceneTree
+          func _init():
+              var checks = {
+                  "res://assets/translations/core.en.en.translation": [["TR_SAP_DAWN","Meridian Combine"],["TR_AMBER_NOON","Aurelian Holdings"],["TR_RUBY_DUSK","Ferrovald Syndicate"],["TR_JADE_TWILIGHT","Aurora Concord"],["TR_OBS_NIGHT","Ashfall Cell"]],
+                  "res://assets/translations/common.en.en.translation": [["TR_GEN_CYRUS","Marshal Hale"],["TR_PREZ_GIDEON","Director Voss"],["TR_WAR_GRIM","Commander Vex"],["TR_LORD_DAWSON","Foundermaster Ferron"],["TR_NOB_SIDNEY","Heiress Marchetti"]],
+                  "res://assets/translations/core.pl.pl.translation": [["TR_SAP_DAWN","Meridian Combine"]],
+              }
+              var fail = 0
+              for path in checks:
+                  var t = load(path)
+                  if t == null:
+                      print("TRFAIL: cannot load ", path)
+                      fail = 1
+                      continue
+                  for c in checks[path]:
+                      var got = t.get_message(c[0])
+                      if got != c[1]:
+                          print("TRFAIL: ", path, " key=", c[0], " got='", got, "' expected='", c[1], "'")
+                          fail = 1
+              print("TRCHECK_DONE fail=", fail)
+              quit()
+          GDEOF
+          sed -i 's/^          //' /tmp/tr_check.gd
+          OUT=$("$HOME/godot-bin/godot" --headless --path . --script /tmp/tr_check.gd 2>&1)
+          RC=$?
+          printf '%s\n' "$OUT" | tail -25
+          if [ $RC -ne 0 ] || ! printf '%s' "$OUT" | grep -q 'TRCHECK_DONE fail=0'; then
+            ENC=$(printf '%s\n' "$OUT" | grep 'TRFAIL' | tail -12 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+            echo "::error::translation runtime check failed::%0A${ENC}"
+            exit 1
           fi
-          echo "translations OK"
-
+          echo "translations OK (runtime-verified)"
       - name: Export Web build
         run: |
           set +e
@@ -261,44 +264,47 @@ jobs:
           OUT=$("$HOME/godot-bin/godot" --headless --path . --script /tmp/diag.gd 2>&1 | grep -E 'ETC2=|RENDERER_' | tr '\n' ' ' | cut -c1-800)
           GREP=$(grep -A4 '^\[rendering\]' project.godot | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2000)
           echo "::notice::diag[${OUT}] project.godot[rendering section]::%0A${GREP}"
-      - name: Verify translations regenerated with new lore (no stale binaries)
+      - name: Verify translations (runtime check via get_message)
         run: |
           set +e
-          echo "--- assets/translations ---"; ls -la assets/translations/ || true
-          echo "--- translation-like files in .godot ---"; find .godot -iname '*translation*' 2>/dev/null | head || true
-          FAIL=0
-          FILES=$(ls assets/translations/*.translation 2>/dev/null)
-          if [ -z "$FILES" ]; then
-            echo "::error::No .translation files regenerated next to CSVs (csv_translation import did not write to res://) — will need CSV-path remap in project.godot"
-            FAIL=1
-          else
-            for f in $FILES; do
-              if grep -qaE 'Sapphire Dawn|Amber Noon|Ruby Dusk|Jade Twilight|Obsidian Night|Warlord Grim|Prince Tybalt' "$f"; then
-                echo "::error::Stale translation binary with old lore: $f"
-                FAIL=1
-              fi
-            done
-            grep -qa 'Meridian' assets/translations/core.en.en.translation || { echo "::error::core.en.en.translation lacks new lore marker (Meridian)"; FAIL=1; }
-            grep -qa 'Hale' assets/translations/common.en.en.translation || { echo "::error::common.en.en.translation lacks new lore marker (Hale)"; FAIL=1; }
+          # первоисточник — CSV — не должен содержать старый лор
+          if grep -rE 'Sapphire Dawn|Ruby Dusk|Jade Twilight|Amber Noon|Obsidian Night|Warlord Grim|Prince Tybalt|King Ludwig' assets/translations/*.csv; then
+            echo "::error::old lore found in translation CSV sources"
+            exit 1
           fi
-          if [ $FAIL -ne 0 ]; then
-            for f in assets/translations/core.en.en.translation assets/translations/common.en.en.translation; do
-              if [ -f "$f" ]; then
-                SZ=$(stat -c%s "$f")
-                COUNTS=""
-                for m in Hale Meridian Corvin Mori Vex Marshal Ferrovald Aurora Aurelian Ashfall; do
-                  C=$(grep -ao "$m" "$f" 2>/dev/null | wc -l)
-                  COUNTS="$COUNTS $m=$C"
-                done
-                echo "::notice::$f size=$SZ marker_counts:$COUNTS"
-                DUMP=$(strings -n 4 "$f" 2>/dev/null | grep -iE 'hale|meridian|marshal|combine|syndicate|concord|holdings|cell|corvin|voss|ferron|brandt|marchetti|renn|mori|verne|aurelian|vex' | head -40 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
-                echo "::notice::$f lore-strings dump::%0A${DUMP:-NONE}"
-              fi
-            done
-            exit $FAIL
+          cat > /tmp/tr_check.gd <<'GDEOF'
+          extends SceneTree
+          func _init():
+              var checks = {
+                  "res://assets/translations/core.en.en.translation": [["TR_SAP_DAWN","Meridian Combine"],["TR_AMBER_NOON","Aurelian Holdings"],["TR_RUBY_DUSK","Ferrovald Syndicate"],["TR_JADE_TWILIGHT","Aurora Concord"],["TR_OBS_NIGHT","Ashfall Cell"]],
+                  "res://assets/translations/common.en.en.translation": [["TR_GEN_CYRUS","Marshal Hale"],["TR_PREZ_GIDEON","Director Voss"],["TR_WAR_GRIM","Commander Vex"],["TR_LORD_DAWSON","Foundermaster Ferron"],["TR_NOB_SIDNEY","Heiress Marchetti"]],
+                  "res://assets/translations/core.pl.pl.translation": [["TR_SAP_DAWN","Meridian Combine"]],
+              }
+              var fail = 0
+              for path in checks:
+                  var t = load(path)
+                  if t == null:
+                      print("TRFAIL: cannot load ", path)
+                      fail = 1
+                      continue
+                  for c in checks[path]:
+                      var got = t.get_message(c[0])
+                      if got != c[1]:
+                          print("TRFAIL: ", path, " key=", c[0], " got='", got, "' expected='", c[1], "'")
+                          fail = 1
+              print("TRCHECK_DONE fail=", fail)
+              quit()
+          GDEOF
+          sed -i 's/^          //' /tmp/tr_check.gd
+          OUT=$("$HOME/godot-bin/godot" --headless --path . --script /tmp/tr_check.gd 2>&1)
+          RC=$?
+          printf '%s\n' "$OUT" | tail -25
+          if [ $RC -ne 0 ] || ! printf '%s' "$OUT" | grep -q 'TRCHECK_DONE fail=0'; then
+            ENC=$(printf '%s\n' "$OUT" | grep 'TRFAIL' | tail -12 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+            echo "::error::translation runtime check failed::%0A${ENC}"
+            exit 1
           fi
-          echo "translations OK"
-
+          echo "translations OK (runtime-verified)"
       - name: Export Android APK (debug-signed baseline)
         run: |
           set +e
