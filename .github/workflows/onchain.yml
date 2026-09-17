@@ -48,6 +48,8 @@ jobs:
             # тулчейн как у platform-tools: старый proc-macro2 из лока не собирается
             # на rustc 1.9x, а свежие edition2024-крейты не нужны (всё в локе)
             rustup toolchain install 1.84.1 --profile minimal && rustup default 1.84.1
+            # proc-macro2 1.0.89 из лока ломается на тулчейнах 2026; 1.0.95 собирается и на 1.84
+            cargo update -p proc-macro2 --precise 1.0.95 || true
             # Cargo.lock закоммичен (взят из anchor v0.31.0): platform-tools rust 1.84
             # не понимает edition2024-манифесты свежих крейтов 2026 года
             anchor build

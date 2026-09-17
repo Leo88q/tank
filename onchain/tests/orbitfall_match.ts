@@ -103,8 +103,16 @@ describe("orbitfall-match", () => {
       /.*[Ss]ignature.*/
     );
 
-    // cleanup via timeout would take too long here; cancel is invalid (Active),
-    // so leave the match to expire; localnet test ends anyway.
+    // cleanup: settle consensually so the PDA is closed for later tests
+    await program.methods
+      .settle(0)
+      .accounts({
+        creator: creator.publicKey,
+        joiner: joiner.publicKey,
+        ...accounts(pda),
+      })
+      .signers([creator, joiner])
+      .rpc();
   });
 
   it("cancel while open returns stake", async () => {
