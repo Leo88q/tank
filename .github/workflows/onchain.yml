@@ -39,16 +39,16 @@ jobs:
       - name: Anchor build
         working-directory: onchain
         run: |
-          echo "::notice::BUILD_BODY_STARTED cwd=$(pwd) shell-ok"
-          set -uo pipefail
+          echo "::notice::BUILD_BODY_STARTED cwd=$(pwd)"
+          export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
           {
             echo "PATH=$PATH"
-            export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
-            command -v anchor || ls -la /usr/local/bin /root/.cargo/bin /root/.local/share/solana 2>/dev/null || true
-            anchor --version
+            command -v anchor || echo NO_ANCHOR_IN_PATH
+            anchor --version || true
             anchor build
-          } 2>&1 | tee /tmp/onchain.log
-          rc=${PIPESTATUS[0]}
+          } > /tmp/onchain.log 2>&1
+          rc=$?
+          tail -25 /tmp/onchain.log
           if [ "$rc" -ne 0 ]; then
             ENC=$(head -c 6000 /tmp/onchain.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
             echo "::error::anchor build rc=$rc::%0A${ENC}"
@@ -58,8 +58,15 @@ jobs:
       - name: Anchor test (localnet)
         working-directory: onchain
         run: |
-          set -euo pipefail
-          anchor test 2>&1 | tee -a /tmp/onchain.log
+          export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
+          anchor test >> /tmp/onchain.log 2>&1
+          rc=$?
+          tail -40 /tmp/onchain.log
+          if [ "$rc" -ne 0 ]; then
+            ENC=$(tail -c 6000 /tmp/onchain.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error::anchor test rc=$rc::%0A${ENC}"
+            exit "$rc"
+          fi
 
       # песочница не читает логи Actions — хвост уходит в аннотацию (читается через API)
       - name: Publish failure log (diagnostic)
