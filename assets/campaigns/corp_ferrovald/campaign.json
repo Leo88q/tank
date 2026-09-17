@@ -1,8 +1,8 @@
 {
-    "name": "core_ruby_dusk",
+    "name": "corp_ferrovald",
     "title": "tr_core_ruby_dusk_campaign_title",
     "icon": "red_gem",
-    "prerequisite": "core_prologue",
+    "prerequisite": "corp_prologue",
     "map": "map.jpeg",
     "missions": [
         {

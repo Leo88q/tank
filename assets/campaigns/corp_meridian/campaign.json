@@ -1,8 +1,8 @@
 {
-    "name": "core_sapphire_dawn",
+    "name": "corp_meridian",
     "title": "tr_core_sapphire_dawn_campaign_title",
     "icon": "blue_gem",
-    "prerequisite": "core_ruby_dusk",
+    "prerequisite": "corp_ferrovald",
     "map": "map.jpeg",
     "missions": [
         {

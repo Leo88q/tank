@@ -196,61 +196,11 @@ horizontal_scroll_mode = 0
 custom_minimum_size = Vector2(760, 510)
 layout_mode = 2
 bbcode_enabled = true
-text = "[b]### 1.0.8[/b]
-- In Ruby Dusk campaign mission Hold the Line the amount of AP available to the AI has been greatly reduced
-- Added three rolling autosaves
-- Added experimental undo last unit move with R key
-- Fixed Targetting Automaton not enabling Mobile Infantry to attack air units
-- Fixed a bug where tilt-shift toggle was not being applied on map load
- 
-[b]### 1.0.7[/b]
-- Multiplayer host can now kick players from lobby
-- Added configurable turn time limit to multiplayer games
-- Added configurable turns limit to multiplayer games
-- Added points summary in multiplayer games in case of a turn limit draw
-- Added Online join code copy button
-- Added tilt-shift blur toggle to Settings
-- Moved UI elements in map picker and load/save interface
- 
-[b]### 1.0.6[/b]
-- Added spectators to multiplayer matches
-- Unit is snapped into position before attacking to prevent misalignment
-- Online registration is now stored on per-domain basis
-- Fixed screen edge camera pan getting stuck if camera is dragged while panning
-- Fixed multiplayer settings domain being converted to a number value
-- Fixed a reggresion introduced in 1.0.3 that prevented players from properly reconnecting to a multiplayer match
- 
-[b]### 1.0.5[/b]
-- Added rendering scale slider to Video settings
-- Fixed AI taking over player turns in Multiplayer and Online
-- Fixed desync between clients when canceling ability in Multiplayer and Online
- 
-[b]### 1.0.3[/b]
-- Added movement points bar to units
-- Remapped Middle Mouse Button to move camera instead of end turn
-- Added patch notes in main menu
-- Added \"Reset\" button in multiplayer settings
-	- Use \"Reset\" if Online is not working and you played a pre-release version of the game
-- Fixed a crash when any of the online domains was set to empty string
- 
-[b]### 1.0.0[/b]
-- Medkit and Repair Kit abilities now grant exp to the unit
-- Repair Kit ability costs less on higher levels
-- Attack Helicopter ability Pick Up now works on Mobile Infantry when on lvl 3
-- Hero level up bonuses rebalanced:
-  - armor bonus at lvl 1
-  - movement bonus at lvl 2
-  - ability cooldown bonus at lvl 3
-- Shortened cooldown on some hero abilities
-- Extended AI lookup range to make it more active
-- Lowered some ability SFX volume
-- Fixed a possible team detection bug
-- Fixed a dialogue issue in Prologue
-- Fixed some dialogue issues in campaigns
-- Fixed a no moves popup after loading saved game and ending turn
-- Fixed Deep Strike infantry unit spawning without team assignment
-- Fixed a bug preventing maps from being uploaded
-- Fixed a bug that caused the game to softlock when it could not connect to online relay"
+text = "[b]### 0.1.0[/b]
+- The project forks and rebrands: welcome to Orbitfall (working title)
+- Four corporate factions: Meridian Combine, Ferrovald Syndicate, Aurora Concord and Aurelian Holdings
+- Campaigns retold with new characters: Director Voss, Marshal Hale, Operative Borel, Foundermaster Ferron, Chancellor Renn, Chairman Aurelian, Commander Vex and others
+- Gameplay unchanged; full art, audio and UI identity pass is in progress"
 
 [node name="back_button" type="TextureButton" parent="widgets"]
 layout_mode = 0

@@ -1,8 +1,8 @@
 {
-    "name": "core_jade_twilight",
+    "name": "corp_aurora",
     "title": "tr_core_jade_twilight_campaign_title",
     "icon": "green_gem",
-    "prerequisite": "core_sapphire_dawn",
+    "prerequisite": "corp_meridian",
     "map": "map.jpeg",
     "missions": [
         {

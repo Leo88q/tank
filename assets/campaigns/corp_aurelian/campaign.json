@@ -1,8 +1,8 @@
 {
-    "name": "core_amber_noon",
+    "name": "corp_aurelian",
     "title": "tr_core_amber_noon_campaign_title",
     "icon": "yellow_gem",
-    "prerequisite": "core_jade_twilight",
+    "prerequisite": "corp_aurora",
     "map": "map.jpeg",
     "missions": [
         {

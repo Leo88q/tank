@@ -11,12 +11,12 @@ var campaign_progress = {}
 
 var registered_core_campaign_names = [
 	"tutorial",
-	"core_prologue",
-	"core_ruby_dusk",
-	"core_sapphire_dawn",
-	"core_jade_twilight",
-	"core_amber_noon",
-	"core_epilogue"
+	"corp_prologue",
+	"corp_ferrovald",
+	"corp_meridian",
+	"corp_aurora",
+	"corp_aurelian",
+	"corp_epilogue"
 ]
 
 var core_campaigns = []
