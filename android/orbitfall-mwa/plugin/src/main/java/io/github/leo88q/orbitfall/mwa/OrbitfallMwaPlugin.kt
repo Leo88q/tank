@@ -32,7 +32,9 @@ class OrbitfallMwaPlugin(godot: Godot) : GodotPlugin(godot) {
 
     init {
         bus = { json ->
-            godot.runOnUiThread { emitSignal("wallet_event", json) }
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                emitSignal("wallet_event", json)
+            }
         }
     }
 

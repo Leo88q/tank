@@ -6,6 +6,7 @@ import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.solana.mobilewalletadapter.clientlib.*
+import com.solana.mobilewalletadapter.common.signin.SignInWithSolana
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
