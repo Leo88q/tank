@@ -45,7 +45,9 @@ jobs:
             echo "PATH=$PATH"
             command -v anchor || echo NO_ANCHOR_IN_PATH
             anchor --version || true
-            rustup default stable || { rustup toolchain install stable && rustup default stable; }
+            # тулчейн как у platform-tools: старый proc-macro2 из лока не собирается
+            # на rustc 1.9x, а свежие edition2024-крейты не нужны (всё в локе)
+            rustup toolchain install 1.84.1 --profile minimal && rustup default 1.84.1
             # Cargo.lock закоммичен (взят из anchor v0.31.0): platform-tools rust 1.84
             # не понимает edition2024-манифесты свежих крейтов 2026 года
             anchor build
