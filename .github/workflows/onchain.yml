@@ -46,6 +46,10 @@ jobs:
             command -v anchor || echo NO_ANCHOR_IN_PATH
             anchor --version || true
             rustup default stable || { rustup toolchain install stable && rustup default stable; }
+            # platform-tools rust = 1.84 (нет edition2024): пиним слишком свежие крейты
+            cargo generate-lockfile
+            cargo update -p base64ct --precise 1.7.3 || true
+            { cargo tree -i toml_parser || true; cargo tree -i base64ct || true; } > /tmp/tree.log 2>&1
             anchor build
           } > /tmp/onchain.log 2>&1
           rc=$?
@@ -73,8 +77,9 @@ jobs:
       - name: Publish failure log (diagnostic)
         if: failure()
         run: |
+          TREE=$(head -40 /tmp/tree.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
           HEAD=$(head -12 /tmp/onchain.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2500)
           PREP=$(tail -20 /tmp/prep.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
           ENC=$(grep -E "^error|error\[|panicked|failed" /tmp/onchain.log 2>/dev/null | head -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-4500)
           TAIL=$(tail -15 /tmp/onchain.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
-          echo "::error::onchain failure::%0A--- head ---%0A${HEAD}%0A--- prep ---%0A${PREP}%0A--- build errors ---%0A${ENC}%0A--- tail ---%0A${TAIL}"
+          echo "::error::onchain failure::%0A--- tree ---%0A${TREE}%0A--- head ---%0A${HEAD}%0A--- build errors ---%0A${ENC}%0A--- tail ---%0A${TAIL}"
