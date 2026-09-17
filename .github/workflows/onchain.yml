@@ -46,10 +46,8 @@ jobs:
             command -v anchor || echo NO_ANCHOR_IN_PATH
             anchor --version || true
             rustup default stable || { rustup toolchain install stable && rustup default stable; }
-            # platform-tools rust = 1.84 (нет edition2024): пиним слишком свежие крейты
-            cargo generate-lockfile
-            cargo update -p base64ct --precise 1.7.3 || true
-            { cargo tree -i toml_parser || true; cargo tree -i base64ct || true; } > /tmp/tree.log 2>&1
+            # Cargo.lock закоммичен (взят из anchor v0.31.0): platform-tools rust 1.84
+            # не понимает edition2024-манифесты свежих крейтов 2026 года
             anchor build
           } > /tmp/onchain.log 2>&1
           rc=$?
