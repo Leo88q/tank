@@ -66,6 +66,8 @@ jobs:
         working-directory: onchain
         run: |
           export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
+          solana-keygen new --no-bip39-passphrase --force >> /tmp/onchain.log 2>&1 || true
+          solana config set --url localhost >> /tmp/onchain.log 2>&1 || true
           anchor test >> /tmp/onchain.log 2>&1
           rc=$?
           tail -40 /tmp/onchain.log
