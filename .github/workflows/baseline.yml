@@ -105,9 +105,9 @@ jobs:
           echo "--- export rc=$RC ---"
           if [ $RC -ne 0 ]; then
             SUMF="${GITHUB_STEP_SUMMARY:-/tmp/step_summary.md}"
-            { echo "## Godot Web export failed (rc=$RC)"; echo '```'; tail -60 /tmp/godot_export.log; echo '```'; } >> "$SUMF" 2>/dev/null
-            MSG=$(grep -iE 'error|fail|invalid|missing|cannot|not found' /tmp/godot_export.log | tail -6 | tr '\n' ' ' | cut -c1-1800)
-            echo "::error::Web export rc=$RC :: ${MSG:-no error lines captured, see step output}"
+            { echo "## Godot Web export failed (rc=$RC)"; echo '```'; tail -60 /tmp/godot_export.log; echo '```'; } >> "$SUMF" 2>/dev/null || true
+            ENC=$(tail -40 /tmp/godot_export.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7500)
+            echo "::error::Web export rc=$RC, log tail::%0A${ENC}"
             df -h . ; free -m | head -3
             exit $RC
           fi
@@ -228,9 +228,9 @@ jobs:
           echo "--- export rc=$RC ---"
           if [ $RC -ne 0 ]; then
             SUMF="${GITHUB_STEP_SUMMARY:-/tmp/step_summary.md}"
-            { echo "## Godot Android export failed (rc=$RC)"; echo '```'; tail -60 /tmp/godot_export.log; echo '```'; } >> "$SUMF" 2>/dev/null
-            MSG=$(grep -iE 'error|fail|invalid|missing|cannot|not found' /tmp/godot_export.log | tail -6 | tr '\n' ' ' | cut -c1-1800)
-            echo "::error::Android export rc=$RC :: ${MSG:-no error lines captured, see step output}"
+            { echo "## Godot Android export failed (rc=$RC)"; echo '```'; tail -60 /tmp/godot_export.log; echo '```'; } >> "$SUMF" 2>/dev/null || true
+            ENC=$(tail -40 /tmp/godot_export.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7500)
+            echo "::error::Android export rc=$RC, log tail::%0A${ENC}"
             df -h . ; free -m | head -3
             exit $RC
           fi
