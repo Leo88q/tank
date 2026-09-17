@@ -1,0 +1,254 @@
+# Фаза 2+ — сборка НАШЕГО форка (ребрендинг) после каждого пуша (Web + Android).
+# Экспортные настройки уже вшиты в project.godot форка
+# (секция [rendering]: gl_compatibility для web + ETC2/ASTC), шимы не нужны.
+# Это гейт качества ребрендинга: любой пуш должен собираться.
+name: fork-build
+
+on:
+  push:
+    branches: [arena/01a0ad58-tank, main]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.7.2"   # актуальный стабильный на 2026-08; проект требует >=4.4
+
+jobs:
+  export-web:
+    name: Web export (fork)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+
+      - name: Cache Godot binary + export templates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-v1
+
+      - name: Download Godot + export templates
+        run: |
+          set -euo pipefail
+          if [ ! -x "$HOME/godot-bin/godot" ]; then
+            mkdir -p "$HOME/godot-bin"
+            curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            curl -fsSL -o /tmp/tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            unzip -oq /tmp/godot.zip -d "$HOME/godot-bin"
+            mv "$HOME/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/godot-bin/godot"
+            chmod +x "$HOME/godot-bin/godot"
+          fi
+          if [ ! -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" ]; then
+            mkdir -p "$HOME/.local/share/godot/export_templates"
+            unzip -oq /tmp/tpl.tpz -d "$HOME/.local/share/godot/export_templates"
+            mv "$HOME/.local/share/godot/export_templates/templates" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          fi
+          "$HOME/godot-bin/godot" --version
+          ls "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" | grep -E '^(web|android)' | head
+
+      - name: Generate export_presets.cfg (Web)
+        run: |
+          set -euo pipefail
+          mkdir -p build/web
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+
+          name="Web"
+          platform="Web"
+          runnable=true
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/web/index.html"
+
+          [preset.0.options]
+
+          variant/thread_support=false
+          vram_texture_compression/for_desktop=true
+          vram_texture_compression/for_mobile=true
+          EOF
+          cat export_presets.cfg
+
+      - name: Import project (headless)
+        run: |
+          "$HOME/godot-bin/godot" --headless --path . --import
+      - name: Diagnose project settings visibility
+        run: |
+          set +e
+          cat > /tmp/diag.gd <<'GDEOF'
+          extends SceneTree
+          func _init():
+              print("ETC2=", ProjectSettings.get_setting("rendering/textures/vram_compression/import_etc2_astc", "MISSING"))
+              print("RENDERER_WEB=", ProjectSettings.get_setting("rendering/renderer/rendering_method.web", "MISSING"))
+              print("RENDERER_DEFAULT=", ProjectSettings.get_setting("rendering/renderer/rendering_method", "MISSING"))
+              quit()
+          GDEOF
+          sed -i 's/^          //' /tmp/diag.gd
+          OUT=$("$HOME/godot-bin/godot" --headless --path . --script /tmp/diag.gd 2>&1 | grep -E 'ETC2=|RENDERER_' | tr '\n' ' ' | cut -c1-800)
+          GREP=$(grep -A4 '^\[rendering\]' project.godot | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2000)
+          echo "::notice::diag[${OUT}] project.godot[rendering section]::%0A${GREP}"
+      - name: Export Web build
+        run: |
+          set +e
+          echo "--- pre-export diagnostics ---"
+          grep -n 'rendering_method' project.godot || echo "NO rendering_method override found"
+          ls "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" | grep -E '^web' || echo "NO web templates found"
+          cat export_presets.cfg
+          df -h . ; free -m | head -3
+          echo "--- running export ---"
+          "$HOME/godot-bin/godot" --headless --path . --export-release "Web" build/web/index.html > /tmp/godot_export.log 2>&1
+          RC=$?
+          tail -120 /tmp/godot_export.log
+          echo "--- export rc=$RC ---"
+          if [ $RC -ne 0 ]; then
+            SUMF="${GITHUB_STEP_SUMMARY:-/tmp/step_summary.md}"
+            { echo "## Godot Web export failed (rc=$RC)"; echo '```'; tail -60 /tmp/godot_export.log; echo '```'; } >> "$SUMF" 2>/dev/null || true
+            ENC=$(tail -40 /tmp/godot_export.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7500)
+            echo "::error::Web export rc=$RC, log tail::%0A${ENC}"
+            df -h . ; free -m | head -3
+            exit $RC
+          fi
+
+      - name: Upload Web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbitfall-web
+          path: build/web
+          retention-days: 30
+
+  export-android:
+    name: Android APK (fork)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK packages (preinstalled SDK, target SDK 36)
+        run: |
+          set -euo pipefail
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          ls "$ANDROID_HOME" || true
+          yes | "$SDKM" --licenses > /dev/null 2>&1 || true
+          "$SDKM" --install "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+
+      - name: Generate debug keystore (default location Godot expects)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          keytool -keyalg RSA -genkeypair \
+            -alias androiddebugkey -keypass android -storepass android \
+            -keystore "$HOME/.android/debug.keystore" \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -validity 9999 -deststoretype pkcs12
+
+      - name: Cache Godot binary + export templates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-v1
+
+      - name: Download Godot + export templates
+        run: |
+          set -euo pipefail
+          if [ ! -x "$HOME/godot-bin/godot" ]; then
+            mkdir -p "$HOME/godot-bin"
+            curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            curl -fsSL -o /tmp/tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            unzip -oq /tmp/godot.zip -d "$HOME/godot-bin"
+            mv "$HOME/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/godot-bin/godot"
+            chmod +x "$HOME/godot-bin/godot"
+          fi
+          if [ ! -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" ]; then
+            mkdir -p "$HOME/.local/share/godot/export_templates"
+            unzip -oq /tmp/tpl.tpz -d "$HOME/.local/share/godot/export_templates"
+            mv "$HOME/.local/share/godot/export_templates/templates" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          fi
+
+      - name: Generate export_presets.cfg (Android)
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+
+          name="Android"
+          platform="Android"
+          runnable=true
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/orbitfall-dev.apk"
+
+          [preset.0.options]
+
+          custom_template/debug=""
+          custom_template/release=""
+          architectures/arm64-v8a=true
+          package/unique_name="io.github.leo88q.orbitfall.dev"
+          package/name="Orbitfall (dev)"
+          version/code=1
+          version/name="1.0.9"
+          screen/immersive_mode=true
+          EOF
+          cat export_presets.cfg
+
+      - name: Import project (headless)
+        run: |
+          "$HOME/godot-bin/godot" --headless --path . --import
+      - name: Diagnose project settings visibility
+        run: |
+          set +e
+          cat > /tmp/diag.gd <<'GDEOF'
+          extends SceneTree
+          func _init():
+              print("ETC2=", ProjectSettings.get_setting("rendering/textures/vram_compression/import_etc2_astc", "MISSING"))
+              print("RENDERER_WEB=", ProjectSettings.get_setting("rendering/renderer/rendering_method.web", "MISSING"))
+              print("RENDERER_DEFAULT=", ProjectSettings.get_setting("rendering/renderer/rendering_method", "MISSING"))
+              quit()
+          GDEOF
+          sed -i 's/^          //' /tmp/diag.gd
+          OUT=$("$HOME/godot-bin/godot" --headless --path . --script /tmp/diag.gd 2>&1 | grep -E 'ETC2=|RENDERER_' | tr '\n' ' ' | cut -c1-800)
+          GREP=$(grep -A4 '^\[rendering\]' project.godot | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2000)
+          echo "::notice::diag[${OUT}] project.godot[rendering section]::%0A${GREP}"
+      - name: Export Android APK (debug-signed baseline)
+        run: |
+          set +e
+          echo "--- pre-export diagnostics ---"
+          echo "ANDROID_HOME=${ANDROID_HOME:-unset}" ; java -version 2>&1 | head -1
+          ls "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" | grep -E '^android' | head -4 || echo "NO android templates found"
+          ls "$HOME/.android/debug.keystore" || echo "NO debug keystore"
+          cat export_presets.cfg
+          df -h . ; free -m | head -3
+          echo "--- running export ---"
+          "$HOME/godot-bin/godot" --headless --path . --export-debug "Android" build/orbitfall-dev.apk > /tmp/godot_export.log 2>&1
+          RC=$?
+          tail -120 /tmp/godot_export.log
+          echo "--- export rc=$RC ---"
+          if [ $RC -ne 0 ]; then
+            SUMF="${GITHUB_STEP_SUMMARY:-/tmp/step_summary.md}"
+            { echo "## Godot Android export failed (rc=$RC)"; echo '```'; tail -60 /tmp/godot_export.log; echo '```'; } >> "$SUMF" 2>/dev/null || true
+            ENC=$(tail -40 /tmp/godot_export.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7500)
+            echo "::error::Android export rc=$RC, log tail::%0A${ENC}"
+            df -h . ; free -m | head -3
+            exit $RC
+          fi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbitfall-android
+          path: build/orbitfall-dev.apk
+          retention-days: 30
