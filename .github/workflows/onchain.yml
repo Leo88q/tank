@@ -24,9 +24,17 @@ jobs:
 
       - name: Prep program keypair (devnet authority)
         run: |
-          set -euo pipefail
-          mkdir -p onchain/target/deploy
-          cp onchain/keys/orbitfall_match-keypair.json onchain/target/deploy/
+          {
+            set -x
+            whoami; pwd; ls
+            mkdir -p onchain/target/deploy
+            cp onchain/keys/orbitfall_match-keypair.json onchain/target/deploy/
+            ls -la onchain/target/deploy
+            test -f onchain/target/deploy/orbitfall_match-keypair.json
+          } > /tmp/prep.log 2>&1
+          rc=$?
+          cat /tmp/prep.log
+          exit $rc
 
       - name: Anchor build
         working-directory: onchain
@@ -44,6 +52,7 @@ jobs:
       - name: Publish failure log (diagnostic)
         if: failure()
         run: |
-          ENC=$(grep -E "^error|error\[|warning: unused|panicked|failed" /tmp/onchain.log 2>/dev/null | head -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7500)
-          TAIL=$(tail -15 /tmp/onchain.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3500)
-          echo "::error::onchain failure::%0A${ENC}%0A--- tail ---%0A${TAIL}"
+          PREP=$(tail -20 /tmp/prep.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+          ENC=$(grep -E "^error|error\[|panicked|failed" /tmp/onchain.log 2>/dev/null | head -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-4500)
+          TAIL=$(tail -15 /tmp/onchain.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+          echo "::error::onchain failure::%0A--- prep ---%0A${PREP}%0A--- build errors ---%0A${ENC}%0A--- tail ---%0A${TAIL}"
