@@ -45,6 +45,7 @@ jobs:
             echo "PATH=$PATH"
             command -v anchor || echo NO_ANCHOR_IN_PATH
             anchor --version || true
+            rustup default stable || { rustup toolchain install stable && rustup default stable; }
             anchor build
           } > /tmp/onchain.log 2>&1
           rc=$?
