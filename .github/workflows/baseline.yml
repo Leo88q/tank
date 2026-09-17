@@ -92,13 +92,23 @@ jobs:
           "$HOME/godot-bin/godot" --headless --path . --import
       - name: Export Web build
         run: |
-          set -uo pipefail
-          OUT=$("$HOME/godot-bin/godot" --headless --path . --export-release "Web" build/web/index.html 2>&1)
+          set +e
+          echo "--- pre-export diagnostics ---"
+          grep -n 'rendering_method' project.godot || echo "NO rendering_method override found"
+          ls "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" | grep -E '^web' || echo "NO web templates found"
+          cat export_presets.cfg
+          df -h . ; free -m | head -3
+          echo "--- running export ---"
+          "$HOME/godot-bin/godot" --headless --path . --export-release "Web" build/web/index.html > /tmp/godot_export.log 2>&1
           RC=$?
-          printf '%s\n' "$OUT" | tail -80
+          tail -120 /tmp/godot_export.log
+          echo "--- export rc=$RC ---"
           if [ $RC -ne 0 ]; then
-            { echo '## Godot Web export failed (rc='"$RC"')'; echo '```'; printf '%s\n' "$OUT" | tail -60; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::Web export failed rc=$RC — see step output and job summary"
+            SUMF="${GITHUB_STEP_SUMMARY:-/tmp/step_summary.md}"
+            { echo "## Godot Web export failed (rc=$RC)"; echo '```'; tail -60 /tmp/godot_export.log; echo '```'; } >> "$SUMF" 2>/dev/null
+            MSG=$(grep -iE 'error|fail|invalid|missing|cannot|not found' /tmp/godot_export.log | tail -6 | tr '\n' ' ' | cut -c1-1800)
+            echo "::error::Web export rc=$RC :: ${MSG:-no error lines captured, see step output}"
+            df -h . ; free -m | head -3
             exit $RC
           fi
 
@@ -204,13 +214,24 @@ jobs:
           "$HOME/godot-bin/godot" --headless --path . --import
       - name: Export Android APK (debug-signed baseline)
         run: |
-          set -uo pipefail
-          OUT=$("$HOME/godot-bin/godot" --headless --path . --export-debug "Android" build/tof2-baseline.apk 2>&1)
+          set +e
+          echo "--- pre-export diagnostics ---"
+          echo "ANDROID_HOME=${ANDROID_HOME:-unset}" ; java -version 2>&1 | head -1
+          ls "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" | grep -E '^android' | head -4 || echo "NO android templates found"
+          ls "$HOME/.android/debug.keystore" || echo "NO debug keystore"
+          cat export_presets.cfg
+          df -h . ; free -m | head -3
+          echo "--- running export ---"
+          "$HOME/godot-bin/godot" --headless --path . --export-debug "Android" build/tof2-baseline.apk > /tmp/godot_export.log 2>&1
           RC=$?
-          printf '%s\n' "$OUT" | tail -80
+          tail -120 /tmp/godot_export.log
+          echo "--- export rc=$RC ---"
           if [ $RC -ne 0 ]; then
-            { echo '## Godot Android export failed (rc='"$RC"')'; echo '```'; printf '%s\n' "$OUT" | tail -60; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::Android export failed rc=$RC — see step output and job summary"
+            SUMF="${GITHUB_STEP_SUMMARY:-/tmp/step_summary.md}"
+            { echo "## Godot Android export failed (rc=$RC)"; echo '```'; tail -60 /tmp/godot_export.log; echo '```'; } >> "$SUMF" 2>/dev/null
+            MSG=$(grep -iE 'error|fail|invalid|missing|cannot|not found' /tmp/godot_export.log | tail -6 | tr '\n' ' ' | cut -c1-1800)
+            echo "::error::Android export rc=$RC :: ${MSG:-no error lines captured, see step output}"
+            df -h . ; free -m | head -3
             exit $RC
           fi
 
