@@ -194,7 +194,7 @@ jobs:
           SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           ls "$ANDROID_HOME" || true
           yes | "$SDKM" --licenses > /dev/null 2>&1 || true
-          "$SDKM" --install "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+          "$SDKM" --install "platform-tools" "build-tools;36.0.0" "platforms;android-36" "platforms;android-35"
 
       - name: Generate debug keystore (default location Godot expects)
         run: |
@@ -244,6 +244,21 @@ jobs:
             unzip -oq /tmp/tpl.tpz -d "$HOME/.local/share/godot/export_templates"
             mv "$HOME/.local/share/godot/export_templates/templates" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           fi
+
+      # Для gradle_build/use_gradle_build Godot требует Android Build Template
+      # (res://android/build) — раскладываем android_source.zip из экспортных шаблонов.
+      - name: Install Android build template
+        run: |
+          set -euo pipefail
+          TPL="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          rm -rf /tmp/asrc android/build
+          unzip -oq "$TPL/android_source.zip" -d /tmp/asrc
+          if [ -d /tmp/asrc/android_source ]; then
+            mv /tmp/asrc/android_source android/build
+          else
+            mkdir -p android/build && mv /tmp/asrc/* android/build/
+          fi
+          ls android/build | head
 
       - name: Generate export_presets.cfg (Android)
         run: |

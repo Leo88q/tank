@@ -36,3 +36,4 @@ addons/
 # Эти файлы в апстриме не хранятся (пересоздаются в Godot) — наследуем правило
 assets/terrain/grasslands/grassland_library.tres
 assets/terrain/grasslands_library.tres
+android/build/
