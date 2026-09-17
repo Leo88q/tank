@@ -10,6 +10,7 @@
 //! decision point; this program intentionally stays minimal.
 
 use anchor_lang::prelude::*;
+use anchor_lang::system_program;
 
 declare_id!("AeuAXhwzbULEoR3gi66RpFZNwDZx6i17i7gSgP1gUqeH");
 
