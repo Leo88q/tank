@@ -378,12 +378,17 @@ jobs:
         run: |
           {
             for f in /tmp/mwa_build.log /tmp/godot_export.log; do
-              [ -f "$f" ] && { echo "--- $f ---"; tail -c 4500 "$f"; }
+              if [ -f "$f" ]; then
+                echo "--- $f (causes) ---"
+                grep -E '^e: |error:|ERROR|What went wrong|Caused by:|Execution failed|Could not (resolve|find)' "$f" | head -40
+                echo "--- $f (tail) ---"
+                tail -c 2000 "$f"
+              fi
             done
           } > /tmp/diag.txt || true
           cat /tmp/diag.txt
           if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
             { echo '```'; cat /tmp/diag.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           fi
-          ENC=$(tail -25 /tmp/diag.txt | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7500)
-          echo "::error::android job failure tail::%0A${ENC}"
+          ENC=$(grep -E '^e: |error:|What went wrong|Caused by:|Execution failed|Could not (resolve|find)' /tmp/diag.txt | head -30 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7500)
+          echo "::error::android job failure causes::%0A${ENC}"
