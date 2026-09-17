@@ -109,8 +109,17 @@ jobs:
             grep -qa 'Meridian' assets/translations/core.en.en.translation || { echo "::error::core.en.en.translation lacks new lore marker (Meridian)"; FAIL=1; }
             grep -qa 'Hale' assets/translations/common.en.en.translation || { echo "::error::common.en.en.translation lacks new lore marker (Hale)"; FAIL=1; }
           fi
-          [ $FAIL -eq 0 ] && echo "translations OK"
-          exit $FAIL
+          if [ $FAIL -ne 0 ]; then
+            for f in assets/translations/core.en.en.translation assets/translations/common.en.en.translation; do
+              if [ -f "$f" ]; then
+                echo "--- strings of $f (size $(stat -c%s "$f")) ---"
+                DUMP=$(strings -n 4 "$f" 2>/dev/null | head -50 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3500)
+                echo "::notice::content dump $f::%0A${DUMP}"
+              fi
+            done
+            exit $FAIL
+          fi
+          echo "translations OK"
 
       - name: Export Web build
         run: |
@@ -266,8 +275,17 @@ jobs:
             grep -qa 'Meridian' assets/translations/core.en.en.translation || { echo "::error::core.en.en.translation lacks new lore marker (Meridian)"; FAIL=1; }
             grep -qa 'Hale' assets/translations/common.en.en.translation || { echo "::error::common.en.en.translation lacks new lore marker (Hale)"; FAIL=1; }
           fi
-          [ $FAIL -eq 0 ] && echo "translations OK"
-          exit $FAIL
+          if [ $FAIL -ne 0 ]; then
+            for f in assets/translations/core.en.en.translation assets/translations/common.en.en.translation; do
+              if [ -f "$f" ]; then
+                echo "--- strings of $f (size $(stat -c%s "$f")) ---"
+                DUMP=$(strings -n 4 "$f" 2>/dev/null | head -50 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3500)
+                echo "::notice::content dump $f::%0A${DUMP}"
+              fi
+            done
+            exit $FAIL
+          fi
+          echo "translations OK"
 
       - name: Export Android APK (debug-signed baseline)
         run: |
