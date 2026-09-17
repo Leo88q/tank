@@ -1,0 +1,91 @@
+# Фаза 4 — сборка и тест Anchor-программы orbitfall-match (эскроу стейк-матча).
+# Контейнер backpackapp/build = anchor + solana CLI + node/yarn.
+name: onchain
+
+on:
+  push:
+    branches: [arena/01a0ad58-tank, main]
+    paths:
+      - "onchain/**"
+      - ".github/workflows/onchain.yml"
+  workflow_dispatch:
+
+jobs:
+  anchor:
+    name: Anchor build + localnet tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: solanafoundation/anchor:v0.31.0
+      options: --user root
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+
+      - name: Prep program keypair (devnet authority)
+        run: |
+          {
+            set -x
+            whoami; pwd; ls
+            mkdir -p onchain/target/deploy
+            cp onchain/keys/orbitfall_match-keypair.json onchain/target/deploy/
+            ls -la onchain/target/deploy
+            test -f onchain/target/deploy/orbitfall_match-keypair.json
+          } > /tmp/prep.log 2>&1
+          rc=$?
+          cat /tmp/prep.log
+          exit $rc
+
+      - name: Anchor build
+        working-directory: onchain
+        run: |
+          echo "::notice::BUILD_BODY_STARTED cwd=$(pwd)"
+          export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
+          {
+            echo "PATH=$PATH"
+            command -v anchor || echo NO_ANCHOR_IN_PATH
+            anchor --version || true
+            # тулчейн как у platform-tools: старый proc-macro2 из лока не собирается
+            # на rustc 1.9x, а свежие edition2024-крейты не нужны (всё в локе)
+            rustup toolchain install 1.84.1 --profile minimal && rustup default 1.84.1
+            # proc-macro2 1.0.89 из лока ломается на тулчейнах 2026; 1.0.95 собирается и на 1.84
+            cargo update -p proc-macro2 --precise 1.0.95 || true
+            # Cargo.lock закоммичен (взят из anchor v0.31.0): platform-tools rust 1.84
+            # не понимает edition2024-манифесты свежих крейтов 2026 года
+            anchor build
+          } > /tmp/onchain.log 2>&1
+          rc=$?
+          tail -25 /tmp/onchain.log
+          if [ "$rc" -ne 0 ]; then
+            ENC=$(head -c 6000 /tmp/onchain.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error::anchor build rc=$rc::%0A${ENC}"
+            exit "$rc"
+          fi
+
+      - name: Anchor test (localnet)
+        working-directory: onchain
+        run: |
+          export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
+          solana-keygen new --no-bip39-passphrase --force >> /tmp/onchain.log 2>&1 || true
+          solana config set --url localhost >> /tmp/onchain.log 2>&1 || true
+          yarn install --silent --ignore-engines >> /tmp/onchain.log 2>&1
+          ANCHOR_LOG=true anchor test >> /tmp/onchain.log 2>&1
+          rc=$?
+          tail -40 /tmp/onchain.log
+          if [ "$rc" -ne 0 ]; then
+            ENC=$(tail -c 6000 /tmp/onchain.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error::anchor test rc=$rc::%0A${ENC}"
+            exit "$rc"
+          fi
+
+      # песочница не читает логи Actions — хвост уходит в аннотацию (читается через API)
+      - name: Publish failure log (diagnostic)
+        if: failure()
+        run: |
+          TREE=$(head -40 /tmp/tree.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+          MID=$(sed -n '/failing/,$p' /tmp/onchain.log 2>/dev/null | head -70 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7000)
+          HEAD=$(head -12 /tmp/onchain.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2500)
+          PREP=$(tail -20 /tmp/prep.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+          ENC=$(grep -E "^error|error\[|panicked|failed" /tmp/onchain.log 2>/dev/null | head -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-4500)
+          TAIL=$(tail -15 /tmp/onchain.log 2>/dev/null | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+          echo "::error::onchain failure::%0A--- build errors ---%0A${ENC}%0A--- mid ---%0A${MID}%0A--- tail ---%0A${TAIL}"

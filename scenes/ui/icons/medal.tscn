@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ctj4mfrt4ynwb"]
+
+[ext_resource type="Texture2D" uid="uid://dvbqi4emgbrf" path="res://assets/gui/icons/medal.png" id="1"]
+
+[node name="medal" type="Sprite2D"]
+texture = ExtResource("1")

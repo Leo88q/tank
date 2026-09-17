@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://c5mgkijudwx6h"]
+
+[ext_resource type="PackedScene" uid="uid://dqv4mqct0nssu" path="res://scenes/abilities/unit/active.tscn" id="1"]
+[ext_resource type="Script" uid="uid://h7y2wk3u0en2" path="res://scenes/abilities/unit/heavy_weapon.gd" id="2"]
+
+[node name="heavy_weapon" instance=ExtResource("1")]
+script = ExtResource("2")
+label = "TR_HEAVY_WEAP"
+description = "TR_HEAVY_WEAP_DESC"
+cooldown = 3
+ability_range = 1
+draw_range = 1
+named_icon = "heavy_weapon"
+marker_colour = "red"
+damage = 8

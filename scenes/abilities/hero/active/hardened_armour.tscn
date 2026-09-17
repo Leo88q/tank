@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://bt36k5vm6iuqm"]
+
+[ext_resource type="PackedScene" uid="uid://ljrlhlvyllyf" path="res://scenes/abilities/hero/active/active.tscn" id="1"]
+[ext_resource type="Script" uid="uid://b8nhkfcyg3es2" path="res://scenes/abilities/hero/active/hardened_armour.gd" id="2"]
+
+[node name="hardened_armour" instance=ExtResource("1")]
+script = ExtResource("2")
+label = "TR_HARD_ARMOUR"
+description = "TR_HARD_ARMOUR_DESC"
+draw_range = 2
+named_icon = "hardened_armour"
+marker_colour = "blue"

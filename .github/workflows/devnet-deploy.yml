@@ -1,0 +1,66 @@
+name: devnet-deploy
+
+# Manual gate: deploys orbitfall-match to devnet using the committed devnet
+# authority keypair (onchain/keys/orbitfall_match-keypair.json — devnet only;
+# swap authority before any mainnet use). Funds the authority via airdrop.
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: solanafoundation/anchor:v0.31.0
+      options: --user root
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+
+      - name: Prep program keypair
+        run: |
+          mkdir -p onchain/target/deploy
+          cp onchain/keys/orbitfall_match-keypair.json onchain/target/deploy/
+
+      - name: Anchor build
+        working-directory: onchain
+        run: |
+          export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
+          {
+            rustup toolchain install 1.84.1 --profile minimal && rustup default 1.84.1
+            cargo update -p proc-macro2 --precise 1.0.95 || true
+            anchor build
+          } > /tmp/deploy.log 2>&1
+          rc=$?
+          tail -25 /tmp/deploy.log
+          if [ "$rc" -ne 0 ]; then
+            ENC=$(tail -c 6000 /tmp/deploy.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error::anchor build failed::%0A${ENC}"
+            exit "$rc"
+          fi
+
+      - name: Deploy to devnet
+        working-directory: onchain
+        run: |
+          export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
+          {
+            solana config set --url devnet
+            AUTH=$(solana-keygen pubkey keys/orbitfall_match-keypair.json)
+            echo "authority: $AUTH"
+            ok=0
+            for i in 1 2 3 4 5 6; do
+              if solana airdrop 2 "$AUTH"; then ok=1; break; fi
+              echo "airdrop attempt $i failed, retrying"; sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "airdrops exhausted; fund $AUTH manually"; exit 1; }
+            anchor deploy --provider.cluster devnet \
+              --provider.wallet keys/orbitfall_match-keypair.json
+          } > /tmp/deploy2.log 2>&1
+          rc=$?
+          tail -30 /tmp/deploy2.log
+          if [ "$rc" -ne 0 ]; then
+            ENC=$(tail -c 6000 /tmp/deploy2.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error::devnet deploy failed::%0A${ENC}"
+            exit "$rc"
+          fi
+          echo "::notice::orbitfall-match deployed to devnet (AeuAXhwzbULEoR3gi66RpFZNwDZx6i17i7gSgP1gUqeH)"

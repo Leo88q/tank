@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ckf5qe36tpwvv"]
+
+[ext_resource type="Texture2D" uid="uid://oln0yhtpvk3t" path="res://assets/gui/icons/quicksave.png" id="1"]
+
+[node name="quicksave" type="Sprite2D"]
+texture = ExtResource("1")

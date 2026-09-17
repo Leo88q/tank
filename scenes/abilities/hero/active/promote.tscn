@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://3lu50pp0ey7o"]
+
+[ext_resource type="PackedScene" uid="uid://ljrlhlvyllyf" path="res://scenes/abilities/hero/active/active.tscn" id="1"]
+[ext_resource type="Script" uid="uid://dv7gbi06trkn0" path="res://scenes/abilities/hero/active/promote.gd" id="2"]
+
+[node name="promote" instance=ExtResource("1")]
+script = ExtResource("2")
+label = "TR_PROMOTE"
+description = "TR_PROMOTE_DESC"
+ability_range = 1
+draw_range = 1
+named_icon = "promote"
+marker_colour = "blue"

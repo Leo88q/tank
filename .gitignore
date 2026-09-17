@@ -1,0 +1,41 @@
+# Godot
+.godot/
+.import/
+*.translation
+export.cfg
+export_presets.cfg
+*export_android.cfg
+
+# Build artifacts
+build/
+*.apk
+*.aab
+
+# Local scratch copies of upstream repos (never committed)
+_upstream/
+vendor_upstream/
+
+# Secrets — never commit
+*.keystore
+*.jks
+*.pem
+keypair*.json
+.env
+.env.*
+
+# Mono / editor cruft (из апстрима)
+.mono/
+*.sublime-*
+.idea
+*.tmp
+**/.DS_Store
+
+# Editor addons
+addons/
+
+# Эти файлы в апстриме не хранятся (пересоздаются в Godot) — наследуем правило
+assets/terrain/grasslands/grassland_library.tres
+assets/terrain/grasslands_library.tres
+android/build/
+android/.build_version
+node_modules/

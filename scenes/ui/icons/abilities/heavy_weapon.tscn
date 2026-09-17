@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cl5ebpo21pv32"]
+
+[ext_resource type="Texture2D" uid="uid://co5kk74ey2jg1" path="res://assets/gui/icons/abilities/heavy_weapon.png" id="1"]
+
+[node name="heavy_weapon" type="Sprite2D"]
+texture = ExtResource("1")
