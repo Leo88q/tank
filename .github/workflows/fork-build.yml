@@ -99,24 +99,29 @@ jobs:
           fi
           cat > /tmp/tr_check.gd <<'GDEOF'
           extends SceneTree
+          func check(p: String, key: String, expected: String) -> int:
+              var t = load(p)
+              if t == null:
+                  print("TRFAIL: cannot load ", p)
+                  return 1
+              var got = t.get_message(key)
+              if got != expected:
+                  print("TRFAIL: ", p, " key=", key, " got='", got, "' expected='", expected, "'")
+                  return 1
+              return 0
           func _init():
-              var checks = {
-                  "res://assets/translations/core.en.en.translation": [["TR_SAP_DAWN","Meridian Combine"],["TR_AMBER_NOON","Aurelian Holdings"],["TR_RUBY_DUSK","Ferrovald Syndicate"],["TR_JADE_TWILIGHT","Aurora Concord"],["TR_OBS_NIGHT","Ashfall Cell"]],
-                  "res://assets/translations/common.en.en.translation": [["TR_GEN_CYRUS","Marshal Hale"],["TR_PREZ_GIDEON","Director Voss"],["TR_WAR_GRIM","Commander Vex"],["TR_LORD_DAWSON","Foundermaster Ferron"],["TR_NOB_SIDNEY","Heiress Marchetti"]],
-                  "res://assets/translations/core.pl.pl.translation": [["TR_SAP_DAWN","Meridian Combine"]],
-              }
               var fail = 0
-              for path in checks:
-                  var t = load(path)
-                  if t == null:
-                      print("TRFAIL: cannot load ", path)
-                      fail = 1
-                      continue
-                  for c in checks[path]:
-                      var got = t.get_message(c[0])
-                      if got != c[1]:
-                          print("TRFAIL: ", path, " key=", c[0], " got='", got, "' expected='", c[1], "'")
-                          fail = 1
+              fail += check("res://assets/translations/core.en.en.translation", "TR_SAP_DAWN", "Meridian Combine")
+              fail += check("res://assets/translations/core.en.en.translation", "TR_AMBER_NOON", "Aurelian Holdings")
+              fail += check("res://assets/translations/core.en.en.translation", "TR_RUBY_DUSK", "Ferrovald Syndicate")
+              fail += check("res://assets/translations/core.en.en.translation", "TR_JADE_TWILIGHT", "Aurora Concord")
+              fail += check("res://assets/translations/core.en.en.translation", "TR_OBS_NIGHT", "Ashfall Cell")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_GEN_CYRUS", "Marshal Hale")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_PREZ_GIDEON", "Director Voss")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_WAR_GRIM", "Commander Vex")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_LORD_DAWSON", "Foundermaster Ferron")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_NOB_SIDNEY", "Heiress Marchetti")
+              fail += check("res://assets/translations/core.pl.pl.translation", "TR_SAP_DAWN", "Meridian Combine")
               print("TRCHECK_DONE fail=", fail)
               quit()
           GDEOF
@@ -274,24 +279,29 @@ jobs:
           fi
           cat > /tmp/tr_check.gd <<'GDEOF'
           extends SceneTree
+          func check(p: String, key: String, expected: String) -> int:
+              var t = load(p)
+              if t == null:
+                  print("TRFAIL: cannot load ", p)
+                  return 1
+              var got = t.get_message(key)
+              if got != expected:
+                  print("TRFAIL: ", p, " key=", key, " got='", got, "' expected='", expected, "'")
+                  return 1
+              return 0
           func _init():
-              var checks = {
-                  "res://assets/translations/core.en.en.translation": [["TR_SAP_DAWN","Meridian Combine"],["TR_AMBER_NOON","Aurelian Holdings"],["TR_RUBY_DUSK","Ferrovald Syndicate"],["TR_JADE_TWILIGHT","Aurora Concord"],["TR_OBS_NIGHT","Ashfall Cell"]],
-                  "res://assets/translations/common.en.en.translation": [["TR_GEN_CYRUS","Marshal Hale"],["TR_PREZ_GIDEON","Director Voss"],["TR_WAR_GRIM","Commander Vex"],["TR_LORD_DAWSON","Foundermaster Ferron"],["TR_NOB_SIDNEY","Heiress Marchetti"]],
-                  "res://assets/translations/core.pl.pl.translation": [["TR_SAP_DAWN","Meridian Combine"]],
-              }
               var fail = 0
-              for path in checks:
-                  var t = load(path)
-                  if t == null:
-                      print("TRFAIL: cannot load ", path)
-                      fail = 1
-                      continue
-                  for c in checks[path]:
-                      var got = t.get_message(c[0])
-                      if got != c[1]:
-                          print("TRFAIL: ", path, " key=", c[0], " got='", got, "' expected='", c[1], "'")
-                          fail = 1
+              fail += check("res://assets/translations/core.en.en.translation", "TR_SAP_DAWN", "Meridian Combine")
+              fail += check("res://assets/translations/core.en.en.translation", "TR_AMBER_NOON", "Aurelian Holdings")
+              fail += check("res://assets/translations/core.en.en.translation", "TR_RUBY_DUSK", "Ferrovald Syndicate")
+              fail += check("res://assets/translations/core.en.en.translation", "TR_JADE_TWILIGHT", "Aurora Concord")
+              fail += check("res://assets/translations/core.en.en.translation", "TR_OBS_NIGHT", "Ashfall Cell")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_GEN_CYRUS", "Marshal Hale")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_PREZ_GIDEON", "Director Voss")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_WAR_GRIM", "Commander Vex")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_LORD_DAWSON", "Foundermaster Ferron")
+              fail += check("res://assets/translations/common.en.en.translation", "TR_NOB_SIDNEY", "Heiress Marchetti")
+              fail += check("res://assets/translations/core.pl.pl.translation", "TR_SAP_DAWN", "Meridian Combine")
               print("TRCHECK_DONE fail=", fail)
               quit()
           GDEOF
