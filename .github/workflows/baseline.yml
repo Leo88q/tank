@@ -1,0 +1,188 @@
+# Фаза 1 — бейзлайн: сборка НЕМодифицированного апстрима
+# P1X-in/tanks-of-freedom-ii на нашем CI (Web + Android APK).
+# Апстрим закреплён на конкретном коммите; свои правки сюда не попадают.
+# Когда фаза принята, этот воркфлоу остаётся как референс-сборка для сравнения.
+name: baseline
+
+on:
+  push:
+    branches: [arena/01a0ad58-tank, main]
+  workflow_dispatch:
+
+env:
+  UPSTREAM_REPO: P1X-in/tanks-of-freedom-ii
+  UPSTREAM_REF: dbe629ea05691599dde4fd65ab9a13b78a4ccfe1   # master на 2025-10-02
+  GODOT_VERSION: "4.7.2"                                   # актуальный стабильный на 2026-08; проект требует >=4.4
+
+jobs:
+  export-web:
+    name: Web export (unmodified upstream)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout upstream (pinned, unmodified)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.UPSTREAM_REPO }}
+          ref: ${{ env.UPSTREAM_REF }}
+
+      - name: Cache Godot binary + export templates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-v1
+
+      - name: Download Godot + export templates
+        run: |
+          set -euo pipefail
+          if [ ! -x "$HOME/godot-bin/godot" ]; then
+            mkdir -p "$HOME/godot-bin"
+            curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            curl -fsSL -o /tmp/tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            unzip -oq /tmp/godot.zip -d "$HOME/godot-bin"
+            mv "$HOME/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/godot-bin/godot"
+            chmod +x "$HOME/godot-bin/godot"
+          fi
+          if [ ! -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" ]; then
+            mkdir -p "$HOME/.local/share/godot/export_templates"
+            unzip -oq /tmp/tpl.tpz -d "$HOME/.local/share/godot/export_templates"
+            mv "$HOME/.local/share/godot/export_templates/templates" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          fi
+          "$HOME/godot-bin/godot" --version
+
+      - name: Generate export_presets.cfg (Web)
+        run: |
+          set -euo pipefail
+          mkdir -p build/web
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+
+          name="Web"
+          platform="Web"
+          runnable=true
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/web/index.html"
+
+          [preset.0.options]
+
+          variant/thread_support=false
+          vram_texture_compression/for_desktop=true
+          vram_texture_compression/for_mobile=true
+          EOF
+          head -5 export_presets.cfg
+
+      - name: Import project (headless)
+        run: |
+          "$HOME/godot-bin/godot" --headless --path . --import
+      - name: Export Web build
+        run: |
+          "$HOME/godot-bin/godot" --headless --path . --export-release "Web" build/web/index.html
+      - name: Upload Web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tof2-baseline-web
+          path: build/web
+          retention-days: 30
+
+  export-android:
+    name: Android APK (unmodified upstream)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout upstream (pinned, unmodified)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.UPSTREAM_REPO }}
+          ref: ${{ env.UPSTREAM_REF }}
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages (target SDK 36 — требование Google Play с 2026)
+        run: sdkmanager --install "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+
+      - name: Generate debug keystore (default location Godot expects)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          keytool -keyalg RSA -genkeypair \
+            -alias androiddebugkey -keypass android -storepass android \
+            -keystore "$HOME/.android/debug.keystore" \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -validity 9999 -deststoretype pkcs12
+
+      - name: Cache Godot binary + export templates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-v1
+
+      - name: Download Godot + export templates
+        run: |
+          set -euo pipefail
+          if [ ! -x "$HOME/godot-bin/godot" ]; then
+            mkdir -p "$HOME/godot-bin"
+            curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+            curl -fsSL -o /tmp/tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            unzip -oq /tmp/godot.zip -d "$HOME/godot-bin"
+            mv "$HOME/godot-bin/Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/godot-bin/godot"
+            chmod +x "$HOME/godot-bin/godot"
+          fi
+          if [ ! -d "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" ]; then
+            mkdir -p "$HOME/.local/share/godot/export_templates"
+            unzip -oq /tmp/tpl.tpz -d "$HOME/.local/share/godot/export_templates"
+            mv "$HOME/.local/share/godot/export_templates/templates" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          fi
+
+      - name: Generate export_presets.cfg (Android)
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+
+          name="Android"
+          platform="Android"
+          runnable=true
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/tof2-baseline.apk"
+
+          [preset.0.options]
+
+          custom_template/debug=""
+          custom_template/release=""
+          architectures/arm64-v8a=true
+          package/unique_name="io.github.leo88q.tof2baseline"
+          package/name="ToF II baseline build"
+          version/code=1
+          version/name="1.0.9"
+          screen/immersive_mode=true
+          EOF
+          head -5 export_presets.cfg
+
+      - name: Import project (headless)
+        run: |
+          "$HOME/godot-bin/godot" --headless --path . --import
+      - name: Export Android APK (debug-signed baseline)
+        run: |
+          "$HOME/godot-bin/godot" --headless --path . --export-debug "Android" build/tof2-baseline.apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tof2-baseline-android
+          path: build/tof2-baseline.apk
+          retention-days: 30

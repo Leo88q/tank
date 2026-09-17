@@ -1,0 +1,21 @@
+# Godot
+.godot/
+*.translation
+export_presets.cfg
+
+# Build artifacts
+build/
+*.apk
+*.aab
+
+# Local scratch copies of upstream repos (never committed)
+_upstream/
+vendor_upstream/
+
+# Secrets — never commit
+*.keystore
+*.jks
+*.pem
+keypair*.json
+.env
+.env.*
