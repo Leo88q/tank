@@ -95,6 +95,21 @@ jobs:
       - name: Import project (headless)
         run: |
           "$HOME/godot-bin/godot" --headless --path . --import
+      - name: Diagnose project settings visibility
+        run: |
+          set +e
+          cat > /tmp/diag.gd <<'GDEOF'
+          extends SceneTree
+          func _init():
+              print("ETC2=", ProjectSettings.get_setting("rendering/textures/vram_compression/import_etc2_astc", "MISSING"))
+              print("RENDERER_WEB=", ProjectSettings.get_setting("rendering/renderer/rendering_method.web", "MISSING"))
+              print("RENDERER_DEFAULT=", ProjectSettings.get_setting("rendering/renderer/rendering_method", "MISSING"))
+              quit()
+          GDEOF
+          sed -i 's/^          //' /tmp/diag.gd
+          OUT=$("$HOME/godot-bin/godot" --headless --path . --script /tmp/diag.gd 2>&1 | grep -E 'ETC2=|RENDERER_' | tr '\n' ' ' | cut -c1-800)
+          GREP=$(grep -A4 '^\[rendering\]' project.godot | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2000)
+          echo "::notice::diag[${OUT}] project.godot[rendering section]::%0A${GREP}"
       - name: Export Web build
         run: |
           set +e
@@ -223,6 +238,21 @@ jobs:
       - name: Import project (headless)
         run: |
           "$HOME/godot-bin/godot" --headless --path . --import
+      - name: Diagnose project settings visibility
+        run: |
+          set +e
+          cat > /tmp/diag.gd <<'GDEOF'
+          extends SceneTree
+          func _init():
+              print("ETC2=", ProjectSettings.get_setting("rendering/textures/vram_compression/import_etc2_astc", "MISSING"))
+              print("RENDERER_WEB=", ProjectSettings.get_setting("rendering/renderer/rendering_method.web", "MISSING"))
+              print("RENDERER_DEFAULT=", ProjectSettings.get_setting("rendering/renderer/rendering_method", "MISSING"))
+              quit()
+          GDEOF
+          sed -i 's/^          //' /tmp/diag.gd
+          OUT=$("$HOME/godot-bin/godot" --headless --path . --script /tmp/diag.gd 2>&1 | grep -E 'ETC2=|RENDERER_' | tr '\n' ' ' | cut -c1-800)
+          GREP=$(grep -A4 '^\[rendering\]' project.godot | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2000)
+          echo "::notice::diag[${OUT}] project.godot[rendering section]::%0A${GREP}"
       - name: Export Android APK (debug-signed baseline)
         run: |
           set +e
