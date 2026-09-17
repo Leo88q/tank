@@ -1,6 +1,6 @@
 extends Node
 
-var THUMBNAIL_LOCATION: String = "api.tof.p1x.in"
+var THUMBNAIL_LOCATION: String = "api.orbitfall.example"
 const THUMBNAIL_URL: String = "/browser/public/thumbs/v2/"
 const THUMBNAIL_V1_URL: String = "/browser/public/thumbs/"
 

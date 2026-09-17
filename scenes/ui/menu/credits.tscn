@@ -189,28 +189,25 @@ offset_bottom = -70.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_fonts/font = ExtResource("8_byrry")
-text = "Tanks of Freedom II by P1X
-czlowiekimadlo
+text = "ORBITFALL
+working title — corporate mech tactics
  
  
-Graphics
-czlowiekimadlo
-kenneyNL - Control icons
+Open Source Credits
+ 
+Based on Tanks of Freedom II
+MIT License (c) 2025 P1X
+github.com/P1X-in/tanks-of-freedom-ii
+ 
+Original code and graphics: czlowiekimadlo
+Control icons: KenneyNL (CC0)
+ 
+Temporary music/sound, to be replaced:
+Juan \"reduz\" Linietsky (CC BY 4.0)
+QmYaan / Grand Beats (CC BY-SA 4.0)
  
  
-Music
-Juan \"reduz\" Linietsky
-QmYaan (Grand Beats)
- 
- 
-Sound
-czlowiekimadlo
-QmYaan (Grand Beats)
- 
- 
-Additional credits
-GaidamakUA
-Godot Engine"
+Built with Godot Engine"
 horizontal_alignment = 1
 vertical_alignment = 1
 

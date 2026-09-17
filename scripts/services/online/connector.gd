@@ -2,7 +2,7 @@ extends Object
 class_name OnlineConnector
 
 var API_PORT: int = 443
-var API_LOCATION: String = "api.tof.p1x.in"
+var API_LOCATION: String = "api.orbitfall.example"
 const API_USE_SSL: bool = true
 const API_PRESENT_VERSION: String = "1.0.0"
 
@@ -35,8 +35,9 @@ func _request_any(location: String, resource: String, method, data: String, expe
 	}
 
 	var http_client: HTTPClient = HTTPClient.new()
-	var client_trusted_cas = load("res://assets/czlowiekimadlo.crt")
-	error = http_client.connect_to_host(location, self.API_PORT, TLSOptions.client(client_trusted_cas))
+	# Фазы 3-4: свой бэкенд/ончейн-профили; до тех пор онлайн-шаринг отключён
+	# (плейсхолдер-домен). Пиннинг сертификата апстрима удалён.
+	error = http_client.connect_to_host(location, self.API_PORT)
 
 	if error != OK:
 		result['status'] = 'error'

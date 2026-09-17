@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dvsx68f1j13b2"
-path="res://.godot/imported/tof2_icon512.png-ce01f41568fadb8e0bb426366dbb7ffd.ctex"
+uid="uid://mo0al04d3r6g"
+path="res://.godot/imported/orbitfall_icon64.png-753f7a05f2c3bf08f079c90cc031c67f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/tof2_icon512.png"
-dest_files=["res://.godot/imported/tof2_icon512.png-ce01f41568fadb8e0bb426366dbb7ffd.ctex"]
+source_file="res://assets/icons/orbitfall_icon64.png"
+dest_files=["res://.godot/imported/orbitfall_icon64.png-753f7a05f2c3bf08f079c90cc031c67f.ctex"]
 
 [params]
 
