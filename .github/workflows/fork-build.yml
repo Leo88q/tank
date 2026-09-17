@@ -215,7 +215,7 @@ jobs:
             curl -fsSL -o /tmp/gradle.zip "https://services.gradle.org/distributions/gradle-8.11.1-bin.zip"
             unzip -oq /tmp/gradle.zip -d "$HOME/gradle-dist"
           fi
-          "$HOME/gradle-dist/gradle-8.11.1/bin/gradle" -p android/orbitfall-mwa :plugin:assembleRelease --no-daemon
+          "$HOME/gradle-dist/gradle-8.11.1/bin/gradle" -p android/orbitfall-mwa :plugin:assembleRelease --no-daemon --stacktrace 2>&1 | tee /tmp/mwa_build.log
           mkdir -p addons/orbitfall_mwa
           cp android/orbitfall-mwa/plugin/build/outputs/aar/plugin-release.aar addons/orbitfall_mwa/orbitfall_mwa-release.aar
           ls -la addons/orbitfall_mwa/
@@ -370,3 +370,18 @@ jobs:
           name: orbitfall-android
           path: build/orbitfall-dev.apk
           retention-days: 30
+
+      # Временная само-диагностика: песочница не читает логи Actions,
+      # поэтому хвост лога публикуется комментарием к коммиту (читается через API).
+      - name: Publish failure log (diagnostic)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            for f in /tmp/mwa_build.log /tmp/godot_export.log; do
+              [ -f "$f" ] && { echo "--- $f ---"; tail -c 4500 "$f"; }
+            done
+          } > /tmp/diag.txt || true
+          gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" \
+            -f body="fork-build android failure diag:$(cat /tmp/diag.txt | head -c 5500)" || true
