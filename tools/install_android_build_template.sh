@@ -16,4 +16,11 @@ if [ -d /tmp/asrc/android_source ]; then
 else
   mkdir -p android/build && mv /tmp/asrc/* android/build/
 fi
-echo "OK: android/build готов"
+
+# маркер версии шаблона, который редактор пишет при Install Android Build Template
+if [ -n "${GODOT_BIN:-}" ] && [ -x "$GODOT_BIN" ]; then
+  "$GODOT_BIN" --version | head -1 > android/.build_version
+else
+  echo "${GODOT_VERSION}.stable.official.ed1daf0bf" > android/.build_version
+fi
+echo "OK: android/build готов (.build_version: $(cat android/.build_version))"

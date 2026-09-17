@@ -258,6 +258,9 @@ jobs:
           else
             mkdir -p android/build && mv /tmp/asrc/* android/build/
           fi
+          # маркер версии шаблона (иначе экспорт ругается "no version info"):
+          "$HOME/godot-bin/godot" --version | head -1 > android/.build_version
+          cat android/.build_version
           ls android/build | head
 
       - name: Generate export_presets.cfg (Android)

@@ -37,3 +37,4 @@ addons/
 assets/terrain/grasslands/grassland_library.tres
 assets/terrain/grasslands_library.tres
 android/build/
+android/.build_version
