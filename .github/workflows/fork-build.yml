@@ -91,17 +91,26 @@ jobs:
           echo "::notice::diag[${OUT}] project.godot[rendering section]::%0A${GREP}"
       - name: Verify translations regenerated with new lore (no stale binaries)
         run: |
-          set -euo pipefail
-          ls assets/translations/*.translation
-          for f in assets/translations/*.translation; do
-            if grep -qaE 'Sapphire Dawn|Amber Noon|Ruby Dusk|Jade Twilight|Obsidian Night|Warlord Grim|Prince Tybalt' "$f"; then
-              echo "::error::Stale translation binary with old lore: $f"
-              exit 1
-            fi
-          done
-          grep -qa 'Meridian' assets/translations/core.en.en.translation
-          grep -qa 'Hale' assets/translations/common.en.en.translation
-          echo "translations OK"
+          set +e
+          echo "--- assets/translations ---"; ls -la assets/translations/ || true
+          echo "--- translation-like files in .godot ---"; find .godot -iname '*translation*' 2>/dev/null | head || true
+          FAIL=0
+          FILES=$(ls assets/translations/*.translation 2>/dev/null)
+          if [ -z "$FILES" ]; then
+            echo "::error::No .translation files regenerated next to CSVs (csv_translation import did not write to res://) — will need CSV-path remap in project.godot"
+            FAIL=1
+          else
+            for f in $FILES; do
+              if grep -qaE 'Sapphire Dawn|Amber Noon|Ruby Dusk|Jade Twilight|Obsidian Night|Warlord Grim|Prince Tybalt' "$f"; then
+                echo "::error::Stale translation binary with old lore: $f"
+                FAIL=1
+              fi
+            done
+            grep -qa 'Meridian' assets/translations/core.en.en.translation || { echo "::error::core.en.en.translation lacks new lore marker (Meridian)"; FAIL=1; }
+            grep -qa 'Hale' assets/translations/common.en.en.translation || { echo "::error::common.en.en.translation lacks new lore marker (Hale)"; FAIL=1; }
+          fi
+          [ $FAIL -eq 0 ] && echo "translations OK"
+          exit $FAIL
 
       - name: Export Web build
         run: |
@@ -239,17 +248,26 @@ jobs:
           echo "::notice::diag[${OUT}] project.godot[rendering section]::%0A${GREP}"
       - name: Verify translations regenerated with new lore (no stale binaries)
         run: |
-          set -euo pipefail
-          ls assets/translations/*.translation
-          for f in assets/translations/*.translation; do
-            if grep -qaE 'Sapphire Dawn|Amber Noon|Ruby Dusk|Jade Twilight|Obsidian Night|Warlord Grim|Prince Tybalt' "$f"; then
-              echo "::error::Stale translation binary with old lore: $f"
-              exit 1
-            fi
-          done
-          grep -qa 'Meridian' assets/translations/core.en.en.translation
-          grep -qa 'Hale' assets/translations/common.en.en.translation
-          echo "translations OK"
+          set +e
+          echo "--- assets/translations ---"; ls -la assets/translations/ || true
+          echo "--- translation-like files in .godot ---"; find .godot -iname '*translation*' 2>/dev/null | head || true
+          FAIL=0
+          FILES=$(ls assets/translations/*.translation 2>/dev/null)
+          if [ -z "$FILES" ]; then
+            echo "::error::No .translation files regenerated next to CSVs (csv_translation import did not write to res://) — will need CSV-path remap in project.godot"
+            FAIL=1
+          else
+            for f in $FILES; do
+              if grep -qaE 'Sapphire Dawn|Amber Noon|Ruby Dusk|Jade Twilight|Obsidian Night|Warlord Grim|Prince Tybalt' "$f"; then
+                echo "::error::Stale translation binary with old lore: $f"
+                FAIL=1
+              fi
+            done
+            grep -qa 'Meridian' assets/translations/core.en.en.translation || { echo "::error::core.en.en.translation lacks new lore marker (Meridian)"; FAIL=1; }
+            grep -qa 'Hale' assets/translations/common.en.en.translation || { echo "::error::common.en.en.translation lacks new lore marker (Hale)"; FAIL=1; }
+          fi
+          [ $FAIL -eq 0 ] && echo "translations OK"
+          exit $FAIL
 
       - name: Export Android APK (debug-signed baseline)
         run: |
