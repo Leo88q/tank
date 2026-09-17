@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8o8qylhjr3p7"]
+
+[ext_resource type="Texture2D" uid="uid://bno82ody2ui6t" path="res://assets/gui/icons/nations/black.png" id="1"]
+
+[node name="black" type="Sprite2D"]
+scale = Vector2(2, 2)
+texture = ExtResource("1")

@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://b37tcqfoip0k5"]
+
+[ext_resource type="PackedScene" uid="uid://dqv4mqct0nssu" path="res://scenes/abilities/unit/active.tscn" id="1"]
+[ext_resource type="Script" uid="uid://po0jsg2k3mch" path="res://scenes/abilities/unit/drop_off.gd" id="2"]
+
+[node name="drop_off" instance=ExtResource("1")]
+script = ExtResource("2")
+label = "TR_DROP_OFF"
+description = "TR_DROP_OFF_DESC"
+ability_range = 1
+draw_range = 1
+named_icon = "drop_off"
+marker_colour = "blue"

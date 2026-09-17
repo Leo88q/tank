@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://6nl5ytclg5ah"
+path="res://.godot/imported/infantry.obj-43679624831ee1a88c5eb9a89de7de43.mesh"
+
+[deps]
+
+files=["res://.godot/imported/infantry.obj-43679624831ee1a88c5eb9a89de7de43.mesh"]
+
+source_file="res://assets/units/yellow/infantry.obj"
+dest_files=["res://.godot/imported/infantry.obj-43679624831ee1a88c5eb9a89de7de43.mesh", "res://.godot/imported/infantry.obj-43679624831ee1a88c5eb9a89de7de43.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

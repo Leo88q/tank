@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://o8msyn6mneus"]
+
+[ext_resource type="PackedScene" uid="uid://ljrlhlvyllyf" path="res://scenes/abilities/hero/active/active.tscn" id="1"]
+[ext_resource type="Script" uid="uid://2b2s4o3nxenw" path="res://scenes/abilities/hero/active/precision_strike.gd" id="2"]
+
+[node name="precision_strike" instance=ExtResource("1")]
+script = ExtResource("2")
+label = "TR_PREC_STRIKE"
+description = "TR_PREC_STRIKE_DESC"
+ability_range = 2
+draw_range = 2
+named_icon = "precision_strike"
+marker_colour = "red"

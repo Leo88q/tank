@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bv1abt0uj0qjn"]
+
+[ext_resource type="Texture2D" uid="uid://2v8bmql01vdf" path="res://assets/gui/icons/abilities/medkit.png" id="1"]
+
+[node name="medkit" type="Sprite2D"]
+texture = ExtResource("1")

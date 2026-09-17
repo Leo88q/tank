@@ -1,7 +1,10 @@
 # Godot
 .godot/
+.import/
 *.translation
+export.cfg
 export_presets.cfg
+*export_android.cfg
 
 # Build artifacts
 build/
@@ -19,3 +22,17 @@ vendor_upstream/
 keypair*.json
 .env
 .env.*
+
+# Mono / editor cruft (из апстрима)
+.mono/
+*.sublime-*
+.idea
+*.tmp
+**/.DS_Store
+
+# Editor addons
+addons/
+
+# Эти файлы в апстриме не хранятся (пересоздаются в Godot) — наследуем правило
+assets/terrain/grasslands/grassland_library.tres
+assets/terrain/grasslands_library.tres

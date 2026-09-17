@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://c1o1add1knghs"
+path="res://.godot/imported/umbrella_3.obj-b38cb86a289a3ad8db575448c8d9eaee.mesh"
+
+[deps]
+
+files=["res://.godot/imported/umbrella_3.obj-b38cb86a289a3ad8db575448c8d9eaee.mesh"]
+
+source_file="res://assets/terrain/sandlands/fixtures/umbrella_3.obj"
+dest_files=["res://.godot/imported/umbrella_3.obj-b38cb86a289a3ad8db575448c8d9eaee.mesh", "res://.godot/imported/umbrella_3.obj-b38cb86a289a3ad8db575448c8d9eaee.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
