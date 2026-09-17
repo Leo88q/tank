@@ -69,8 +69,12 @@
     (кнопки только в главном меню); офлайн-кампания не гейтится кошельком;
   - CI: Android-джоба собирает AAR (Gradle 8.11.1/AGP 8.9.1), экспорт переведён
     на gradle build (`use_gradle_build`, minSdk 24/target 36, плагин включён).
+- **CI зелёный с плагином**: рун **35246778184** (Web + Android, gradle-экспорт,
+  AAR плагина собирается в CI, android build template раскладывается из
+  `android_source.zip` + маркер `android/.build_version`).
 - **Критерий «коннект на реальном устройстве» проверяет человек** — чек-лист в
-  `docs/wallet/mwa_integration.md` (нужен Android + Phantom/Solflare).
+  `docs/wallet/mwa_integration.md` (нужен Android + Phantom/Solflare; APK —
+  артефакт `orbitfall-android` того же рана).
 - Открыто: реальный `identityUri` для кошелька (сейчас orbitfall.example).
 
 ## Что сделано 2026-09-17

@@ -1,0 +1,35 @@
+# Фаза 4 — сборка и тест Anchor-программы orbitfall-match (эскроу стейк-матча).
+# Контейнер backpackapp/build = anchor + solana CLI + node/yarn.
+name: onchain
+
+on:
+  push:
+    branches: [arena/01a0ad58-tank, main]
+    paths:
+      - "onchain/**"
+      - ".github/workflows/onchain.yml"
+  workflow_dispatch:
+
+jobs:
+  anchor:
+    name: Anchor build + localnet tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container: backpackapp/build:v0.31.1
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+
+      - name: Prep program keypair (devnet authority)
+        run: |
+          set -euo pipefail
+          mkdir -p onchain/target/deploy
+          cp onchain/keys/orbitfall_match-keypair.json onchain/target/deploy/
+
+      - name: Anchor build
+        working-directory: onchain
+        run: anchor build
+
+      - name: Anchor test (localnet)
+        working-directory: onchain
+        run: anchor test
