@@ -79,7 +79,7 @@ describe("orbitfall-match", () => {
       .rpc();
     const after = new anchor.BN(await provider.connection.getBalance(joiner.publicKey));
     // winner gets the pot (minus tx fees)
-    assert.ok(after > before.add(stake));
+    assert.ok(after.gt(before.add(stake)));
 
     // account closed after settle
     await assert.rejects(program.account.matchState.fetch(pda));
@@ -146,7 +146,7 @@ describe("orbitfall-match", () => {
       .signers([c2])
       .rpc();
     const after = new anchor.BN(await provider.connection.getBalance(c2.publicKey));
-    assert.ok(after > before);
+    assert.ok(after.gt(before));
   });
 
   it("timeout path refunds both stakes", async () => {
@@ -196,6 +196,6 @@ describe("orbitfall-match", () => {
       .signers([joiner])
       .rpc();
     const cAfter = new anchor.BN(await provider.connection.getBalance(creator.publicKey));
-    assert.ok(cAfter > cBefore.add(stake.sub(new anchor.BN(1))));
+    assert.ok(cAfter.gt(cBefore.add(stake.sub(new anchor.BN(1)))));
   }).timeout(120_000);
 });
