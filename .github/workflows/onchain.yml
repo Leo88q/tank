@@ -39,7 +39,8 @@ jobs:
       - name: Anchor build
         working-directory: onchain
         run: |
-          set -euo pipefail
+          echo "::notice::BUILD_BODY_STARTED cwd=$(pwd) shell-ok"
+          set -uo pipefail
           {
             echo "PATH=$PATH"
             export PATH="$PATH:/root/.local/share/solana/install/active_release/bin:/root/.cargo/bin:/usr/local/bin"
@@ -47,6 +48,12 @@ jobs:
             anchor --version
             anchor build
           } 2>&1 | tee /tmp/onchain.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            ENC=$(head -c 6000 /tmp/onchain.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error::anchor build rc=$rc::%0A${ENC}"
+            exit "$rc"
+          fi
 
       - name: Anchor test (localnet)
         working-directory: onchain
