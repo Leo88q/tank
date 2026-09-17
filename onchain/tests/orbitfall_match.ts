@@ -67,7 +67,7 @@ describe("orbitfall-match", () => {
     assert.strictEqual(st.status, 1);
     assert.ok(st.deadline.toNumber() > 0);
 
-    const before = await provider.connection.getBalance(joiner.publicKey);
+    const before = new anchor.BN(await provider.connection.getBalance(joiner.publicKey));
     await program.methods
       .settle(1)
       .accounts({
@@ -77,7 +77,7 @@ describe("orbitfall-match", () => {
       })
       .signers([creator, joiner])
       .rpc();
-    const after = await provider.connection.getBalance(joiner.publicKey);
+    const after = new anchor.BN(await provider.connection.getBalance(joiner.publicKey));
     // winner gets the pot (minus tx fees)
     assert.ok(after > before.add(stake));
 
@@ -139,13 +139,13 @@ describe("orbitfall-match", () => {
       .accounts({ creator: c2.publicKey, ...accounts(pda, vault) })
       .signers([c2])
       .rpc();
-    const before = await provider.connection.getBalance(c2.publicKey);
+    const before = new anchor.BN(await provider.connection.getBalance(c2.publicKey));
     await program.methods
       .cancel()
       .accounts({ creator: c2.publicKey, ...accounts(pda, vault) })
       .signers([c2])
       .rpc();
-    const after = await provider.connection.getBalance(c2.publicKey);
+    const after = new anchor.BN(await provider.connection.getBalance(c2.publicKey));
     assert.ok(after > before);
   });
 
@@ -182,7 +182,7 @@ describe("orbitfall-match", () => {
 
     await sleep(62_000);
 
-    const cBefore = await provider.connection.getBalance(creator.publicKey);
+    const cBefore = new anchor.BN(await provider.connection.getBalance(creator.publicKey));
     await program.methods
       .timeoutRefund()
       .accounts({
@@ -195,7 +195,7 @@ describe("orbitfall-match", () => {
       })
       .signers([joiner])
       .rpc();
-    const cAfter = await provider.connection.getBalance(creator.publicKey);
+    const cAfter = new anchor.BN(await provider.connection.getBalance(creator.publicKey));
     assert.ok(cAfter > cBefore.add(stake.sub(new anchor.BN(1))));
   }).timeout(120_000);
 });
