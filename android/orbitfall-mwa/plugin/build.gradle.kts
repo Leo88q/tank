@@ -23,7 +23,9 @@ android {
 
 dependencies {
     // Godot Android library: provided at runtime by the engine, compile-only here.
-    compileOnly("org.godotengine:godot:4.7.2.stable")
+    // compileOnly: runtime comes from the Godot export template.
+    // Maven Central publishes up to 4.7.1.stable (checked 2026-09-17).
+    compileOnly("org.godotengine:godot:4.7.1.stable")
     // Solana Mobile Wallet Adapter (2.x) client.
     implementation("com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.1.0")
     implementation("androidx.activity:activity-ktx:1.9.2")
