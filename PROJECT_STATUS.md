@@ -16,7 +16,7 @@
 | 1 | Бейзлайн-сборка оригинала на своём CI | ✅ зелёный прогон (рун 35180853108, 2026-09-17) | апстрим закреплён на `dbe629ea`; Web + Android APK собираются из немодифицированного кода с экспортными шимами |
 | 2 | Полный ребрендинг | 🟢 текст+арт готовы (CI `35229114994`), аудио ждёт решения человека | идентичность: `docs/rebrand/IDENTITY.md`; аудит: `tools/rebrand_audit.py` |
 | 3 | Кошелёк и идентификация | 🟡 код готов, ждёт проверки на устройстве | MWA 2.x (clientlib-ktx 2.1.0): `docs/wallet/mwa_integration.md` |
-| 4 | Экономика и Anchor-программы | 🟢 программа + localnet-тесты зелёные (ран 35266403859) | `onchain/`; devnet-деплой и матч двух кошельков — после Ph3-проверки на устройстве |
+| 4 | Экономика и Anchor-программы | 🟢 контракт (consent-модель) + тесты + Kotlin tx-слой + игровой HUD зелёные в CI | `onchain/` + `android/.../SolTx.kt` + `scripts/wallet/wallet_hud.gd`; devnet-деплой, прогон `devnet-e2e.yml` и тест на устройстве — за человеком |
 | 5 | Валидация ходов / анти-чит | ⛔ не начата | ключевое решение (а)/(б) — до Фазы 6 |
 | 6 | NFT: фракции, герои, косметика | ⛔ не начата | |
 | 7 | Монетизация авторов карт (UGC) | ⛔ не начата | |
@@ -86,6 +86,46 @@
   `docs/wallet/mwa_integration.md` (нужен Android + Phantom/Solflare; APK —
   артефакт `orbitfall-android` того же рана).
 - Открыто: реальный `identityUri` для кошелька (сейчас orbitfall.example).
+
+## Ход Фазы 4 (обновление 2026-09-18) — контракт, вшитый в игру
+
+Задача: смарт-контракт полностью реализован и вшит в игру согласно логике
+монетизации (стейковые 1v1-матчи на devnet), причём каждая операция игрока —
+одно-подписная (ограничение MWA: одно устройство = один кошелёк).
+
+1. **Контракт `orbitfall-match`** (id `AeuAXhwzbULEoR3gi66RpFZNwDZx6i17i7gSgP1gUqeH`,
+   `onchain/programs/orbitfall-match/src/lib.rs`): consent-модель вместо
+   двухподписного `settle`: `create_match(stake,timeout)` → `join_match` →
+   `consent(winner)` каждым игроком (одна подпись) → `settle` любым плательщиком
+   после совпадения обоих consent-битов; бекстопы `timeout_refund` (после
+   дедлайна, любая подпись) и `cancel` (до вступления). Эскроу — безданный
+   vault-PDA (seeds `["vault", creator]`), match-PDA seeds `["match", creator]`.
+   CI `onchain.yml` зелёный на `d14bfd6` (ран 35276298263).
+2. **Android tx-слой** (`android/orbitfall-mwa/plugin/.../mwa/`): `SolTx.kt` —
+   base58, ed25519 on-curve, PDA-поиск, сериализация legacy-сообщения,
+   дискриминаторы Anchor, blockhash по RPC; `MatchTx` — 6 билдеров (все
+   одно-подписные, feePayer = кошелёк игрока). `OrbitfallMwaPlugin.kt` —
+   6 `@UsedByGodot` match-методов; `MwaProxyActivity.doTx()` строит сообщение и
+   отправляет через `signAndSendTransactions`, эмитит `match_ok` с подписью.
+3. **Игровой HUD** (`scripts/wallet/wallet_hud.gd`, автолоад `WalletHud`):
+   строка кошелька (подключить SIWS / отключить) + строка матча
+   (адрес создателя + CREATE/JOIN/I WON/SETTLE/REFUND/CANCEL), статус-строка с
+   подписями транзакций. Видим только в главном меню и только на Android с
+   плагином; оффлайн-кампанию не гейтит.
+4. **Devnet E2E** (`onchain/tests/devnet_e2e.mjs`, `npm run devnet:e2e`):
+   два кошелька, полный матч с консенсусом и таймаут-путь (ранний рефанд
+   отклоняется, после дедлайна — рефанд обоих стейков). Воркфлоу
+   `.github/workflows/devnet-e2e.yml` — ручной запуск (ворота человека);
+   при флейках аирдропа добавить секрет `FUNDER_SECRET` (base58-ключ
+   профинансированного devnet-кошелька).
+5. **Что осталось за человеком:** деплой программы на devnet (CI секреты
+   `ANCHOR_DEPLOY_KEYPAIR` или вручную `anchor deploy --provider.cluster devnet`),
+   прогон `devnet-e2e` (Actions → devnet-e2e → Run workflow), матч на реальном
+   устройстве двумя кошельками (чек-лист `docs/wallet/mwa_integration.md`).
+   Известный риск: полезная нагрузка `signAndSendTransactions` — сериализованное
+   сообщение без сигнатурных слотов; если кошелёк на устройстве потребует
+   полный формат транзакции — поменять только `SolTx.serializeMessage`
+   (добавить нулевые сигнатуры), остальная цепочка не меняется.
 
 ## Что сделано 2026-09-17
 

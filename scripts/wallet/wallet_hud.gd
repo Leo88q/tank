@@ -84,14 +84,12 @@ func _add_button(parent: HBoxContainer, text: String, cb: Callable) -> void:
 
 func _on_event(ev: Dictionary) -> void:
 	var t = ev.get("type")
+	var data = ev.get("data", {})
 	if t == "signed":
-		var data = ev.get("data", {})
 		_set_status("signed ok: ..." + str(data.get("signature", "")).right(8))
 	elif t == "match_ok":
-		var data = ev.get("data", {})
 		_set_status(str(data.get("op", "tx")) + " ok: " + str(data.get("signature", "")).left(12) + "…")
 	elif t == "error":
-		var data = ev.get("data", {})
 		_set_status("error: " + str(data.get("message", "")))
 
 func _on_connected(a: String) -> void:

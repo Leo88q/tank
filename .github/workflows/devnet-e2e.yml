@@ -1,0 +1,27 @@
+name: devnet-e2e
+
+# Manual gate: runs the two-wallet devnet end-to-end (full staked match +
+# timeout path) against the deployed orbitfall-match program. Airdrop funding
+# is rate-limited on shared runners; if it flakes, add a FUNDER_SECRET
+# repository secret (base58 keypair of a funded devnet wallet).
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: onchain
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Two-wallet devnet E2E (full match + timeout path)
+        env:
+          RPC_URL: ${{ vars.DEVNET_RPC_URL || 'https://api.devnet.solana.com' }}
+          FUNDER_SECRET: ${{ secrets.FUNDER_SECRET }}
+        run: npm run devnet:e2e
