@@ -15,7 +15,7 @@ jobs:
     name: Anchor build + localnet tests
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    container: backpackapp/build:v0.31.1
+    container: solanafoundation/anchor:v0.31.0
     steps:
       - name: Checkout fork
         uses: actions/checkout@v4
