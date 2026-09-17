@@ -112,9 +112,15 @@ jobs:
           if [ $FAIL -ne 0 ]; then
             for f in assets/translations/core.en.en.translation assets/translations/common.en.en.translation; do
               if [ -f "$f" ]; then
-                echo "--- strings of $f (size $(stat -c%s "$f")) ---"
-                DUMP=$(strings -n 4 "$f" 2>/dev/null | head -50 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3500)
-                echo "::notice::content dump $f::%0A${DUMP}"
+                SZ=$(stat -c%s "$f")
+                COUNTS=""
+                for m in Hale Meridian Corvin Mori Vex Marshal Ferrovald Aurora Aurelian Ashfall; do
+                  C=$(grep -ao "$m" "$f" 2>/dev/null | wc -l)
+                  COUNTS="$COUNTS $m=$C"
+                done
+                echo "::notice::$f size=$SZ marker_counts:$COUNTS"
+                DUMP=$(strings -n 4 "$f" 2>/dev/null | grep -iE 'hale|meridian|marshal|combine|syndicate|concord|holdings|cell|corvin|voss|ferron|brandt|marchetti|renn|mori|verne|aurelian|vex' | head -40 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+                echo "::notice::$f lore-strings dump::%0A${DUMP:-NONE}"
               fi
             done
             exit $FAIL
@@ -278,9 +284,15 @@ jobs:
           if [ $FAIL -ne 0 ]; then
             for f in assets/translations/core.en.en.translation assets/translations/common.en.en.translation; do
               if [ -f "$f" ]; then
-                echo "--- strings of $f (size $(stat -c%s "$f")) ---"
-                DUMP=$(strings -n 4 "$f" 2>/dev/null | head -50 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3500)
-                echo "::notice::content dump $f::%0A${DUMP}"
+                SZ=$(stat -c%s "$f")
+                COUNTS=""
+                for m in Hale Meridian Corvin Mori Vex Marshal Ferrovald Aurora Aurelian Ashfall; do
+                  C=$(grep -ao "$m" "$f" 2>/dev/null | wc -l)
+                  COUNTS="$COUNTS $m=$C"
+                done
+                echo "::notice::$f size=$SZ marker_counts:$COUNTS"
+                DUMP=$(strings -n 4 "$f" 2>/dev/null | grep -iE 'hale|meridian|marshal|combine|syndicate|concord|holdings|cell|corvin|voss|ferron|brandt|marchetti|renn|mori|verne|aurelian|vex' | head -40 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+                echo "::notice::$f lore-strings dump::%0A${DUMP:-NONE}"
               fi
             done
             exit $FAIL
