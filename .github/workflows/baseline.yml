@@ -1,7 +1,11 @@
 # Фаза 1 — бейзлайн: сборка НЕМодифицированного апстрима
 # P1X-in/tanks-of-freedom-ii на нашем CI (Web + Android APK).
 # Апстрим закреплён на конкретном коммите; свои правки сюда не попадают.
-# Когда фаза принята, этот воркфлоу остаётся как референс-сборка для сравнения.
+#
+# Единственный шим (см. шаг "Web renderer shim"): апстрим не задаёт рендерер
+# для Web-платформы (по умолчанию Forward+, в Web не работает), поэтому перед
+# экспортом в project.godot дописывается оверрайд рендерера ТОЛЬКО для платформы
+# web. Это экспортная настройка, не изменение игрового кода.
 name: baseline
 
 on:
@@ -51,6 +55,14 @@ jobs:
             mv "$HOME/.local/share/godot/export_templates/templates" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           fi
           "$HOME/godot-bin/godot" --version
+          ls "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" | grep -E '^(web|android)' | head
+
+      - name: Web renderer shim (gl_compatibility for web platform only)
+        run: |
+          set -euo pipefail
+          # Апстрим использует дефолтный Forward+; Web требует gl_compatibility.
+          sed -i 's/^\[rendering\]$/[rendering]\nrenderer\/rendering_method.web="gl_compatibility"/' project.godot
+          grep -A2 '^\[rendering\]' project.godot
 
       - name: Generate export_presets.cfg (Web)
         run: |
@@ -73,14 +85,23 @@ jobs:
           vram_texture_compression/for_desktop=true
           vram_texture_compression/for_mobile=true
           EOF
-          head -5 export_presets.cfg
+          cat export_presets.cfg
 
       - name: Import project (headless)
         run: |
           "$HOME/godot-bin/godot" --headless --path . --import
       - name: Export Web build
         run: |
-          "$HOME/godot-bin/godot" --headless --path . --export-release "Web" build/web/index.html
+          set -uo pipefail
+          OUT=$("$HOME/godot-bin/godot" --headless --path . --export-release "Web" build/web/index.html 2>&1)
+          RC=$?
+          printf '%s\n' "$OUT" | tail -80
+          if [ $RC -ne 0 ]; then
+            { echo '## Godot Web export failed (rc='"$RC"')'; echo '```'; printf '%s\n' "$OUT" | tail -60; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Web export failed rc=$RC — see step output and job summary"
+            exit $RC
+          fi
+
       - name: Upload Web artifact
         uses: actions/upload-artifact@v4
         with:
@@ -105,11 +126,15 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages (target SDK 36 — требование Google Play с 2026)
-        run: sdkmanager --install "platform-tools" "build-tools;36.0.0" "platforms;android-36"
+      - name: Install Android SDK packages (preinstalled SDK, target SDK 36)
+        run: |
+          set -euo pipefail
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          ls "$ANDROID_HOME" || true
+          yes | "$SDKM" --licenses > /dev/null 2>&1 || true
+          "$SDKM" --install "platform-tools" "build-tools;36.0.0" "platforms;android-36"
 
       - name: Generate debug keystore (default location Godot expects)
         run: |
@@ -172,14 +197,23 @@ jobs:
           version/name="1.0.9"
           screen/immersive_mode=true
           EOF
-          head -5 export_presets.cfg
+          cat export_presets.cfg
 
       - name: Import project (headless)
         run: |
           "$HOME/godot-bin/godot" --headless --path . --import
       - name: Export Android APK (debug-signed baseline)
         run: |
-          "$HOME/godot-bin/godot" --headless --path . --export-debug "Android" build/tof2-baseline.apk
+          set -uo pipefail
+          OUT=$("$HOME/godot-bin/godot" --headless --path . --export-debug "Android" build/tof2-baseline.apk 2>&1)
+          RC=$?
+          printf '%s\n' "$OUT" | tail -80
+          if [ $RC -ne 0 ]; then
+            { echo '## Godot Android export failed (rc='"$RC"')'; echo '```'; printf '%s\n' "$OUT" | tail -60; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Android export failed rc=$RC — see step output and job summary"
+            exit $RC
+          fi
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
