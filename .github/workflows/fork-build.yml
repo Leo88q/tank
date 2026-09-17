@@ -372,16 +372,18 @@ jobs:
           retention-days: 30
 
       # Временная само-диагностика: песочница не читает логи Actions,
-      # поэтому хвост лога публикуется комментарием к коммиту (читается через API).
+      # но читает аннотации и step summary через API check-runs.
       - name: Publish failure log (diagnostic)
         if: failure()
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           {
             for f in /tmp/mwa_build.log /tmp/godot_export.log; do
               [ -f "$f" ] && { echo "--- $f ---"; tail -c 4500 "$f"; }
             done
           } > /tmp/diag.txt || true
-          gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" \
-            -f body="fork-build android failure diag:$(cat /tmp/diag.txt | head -c 5500)" || true
+          cat /tmp/diag.txt
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            { echo '```'; cat /tmp/diag.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          ENC=$(tail -25 /tmp/diag.txt | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-7500)
+          echo "::error::android job failure tail::%0A${ENC}"
