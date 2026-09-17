@@ -32,6 +32,12 @@ GamepadAdapter="*res://scripts/services/gamepad_adapter.gd"
 SimpleAudioLibrary="*res://scripts/services/audio.gd"
 MouseLayer="*res://scripts/services/mouse_layer.gd"
 SceneSwitcher="*res://scripts/services/scene_switcher.gd"
+WalletBridge="*res://scripts/wallet/wallet_bridge.gd"
+WalletHud="*res://scripts/wallet/wallet_hud.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("orbitfall_mwa")
 MatchSetup="*res://scripts/services/match_setup.gd"
 Settings="*res://scripts/services/settings.gd"
 Campaign="*res://scripts/services/campaign.gd"

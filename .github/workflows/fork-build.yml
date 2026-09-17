@@ -178,6 +178,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Cache Gradle (dist + deps)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/gradle-dist
+            ~/.gradle
+          key: gradle-mwa-8.11.1-v1
+
       - name: Install Android SDK packages (preinstalled SDK, target SDK 36)
         run: |
           set -euo pipefail
@@ -197,6 +205,20 @@ jobs:
             -keystore "$HOME/.android/debug.keystore" \
             -dname "CN=Android Debug,O=Android,C=US" \
             -validity 9999 -deststoretype pkcs12
+
+      - name: Build OrbitfallMwa plugin AAR
+        run: |
+          set -euo pipefail
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          if [ ! -x "$HOME/gradle-dist/gradle-8.11.1/bin/gradle" ]; then
+            mkdir -p "$HOME/gradle-dist"
+            curl -fsSL -o /tmp/gradle.zip "https://services.gradle.org/distributions/gradle-8.11.1-bin.zip"
+            unzip -oq /tmp/gradle.zip -d "$HOME/gradle-dist"
+          fi
+          "$HOME/gradle-dist/gradle-8.11.1/bin/gradle" -p android/orbitfall-mwa :plugin:assembleRelease --no-daemon
+          mkdir -p addons/orbitfall_mwa
+          cp android/orbitfall-mwa/plugin/build/outputs/aar/plugin-release.aar addons/orbitfall_mwa/orbitfall_mwa-release.aar
+          ls -la addons/orbitfall_mwa/
 
       - name: Cache Godot binary + export templates
         uses: actions/cache@v4
@@ -248,6 +270,10 @@ jobs:
           version/code=1
           version/name="1.0.9"
           screen/immersive_mode=true
+          gradle_build/use_gradle_build=true
+          version/min_sdk=24
+          version/target_sdk=36
+          plugins/OrbitfallMwa=true
           EOF
           cat export_presets.cfg
 

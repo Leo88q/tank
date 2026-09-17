@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Godot v2 plugin registration -->
+        <meta-data
+            android:name="org.godotengine.plugin.v2.OrbitfallMwa"
+            android:value="io.github.leo88q.orbitfall.mwa.OrbitfallMwaPlugin" />
+
+        <!-- Invisible helper activity: MWA clientlib needs an ActivityResultCaller
+             (ComponentActivity), while Godot's main activity is a plain Activity. -->
+        <activity
+            android:name="io.github.leo88q.orbitfall.mwa.MwaProxyActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@style/OrbitfallMwaTransparent" />
+    </application>
+
+    <!-- Android 11+ package visibility for MWA association intents -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="solana-wallet" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+</manifest>
