@@ -2,10 +2,12 @@
 # P1X-in/tanks-of-freedom-ii на нашем CI (Web + Android APK).
 # Апстрим закреплён на конкретном коммите; свои правки сюда не попадают.
 #
-# Единственный шим (см. шаг "Web renderer shim"): апстрим не задаёт рендерер
-# для Web-платформы (по умолчанию Forward+, в Web не работает), поэтому перед
-# экспортом в project.godot дописывается оверрайд рендерера ТОЛЬКО для платформы
-# web. Это экспортная настройка, не изменение игрового кода.
+# Шимы (шаги "Export-compat shim*"): апстрим никогда не экспортировался из
+# репозитория, поэтому в project.godot на лету дописываются экспортные настройки:
+#   - рендерер для web-платформы (дефолтный Forward+ в Web не работает);
+#   - импорт текстур ETC2/ASTC (обязателен для Android-экспорта и для
+#     web-пресета с мобильной VRAM-компрессией в Godot 4.7).
+# Это экспортные настройки, не изменение игрового кода.
 name: baseline
 
 on:
@@ -57,12 +59,15 @@ jobs:
           "$HOME/godot-bin/godot" --version
           ls "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable" | grep -E '^(web|android)' | head
 
-      - name: Web renderer shim (gl_compatibility for web platform only)
+      - name: Export-compat shims (CI only, no gameplay changes)
         run: |
           set -euo pipefail
-          # Апстрим использует дефолтный Forward+; Web требует gl_compatibility.
-          sed -i 's/^\[rendering\]$/[rendering]\nrenderer\/rendering_method.web="gl_compatibility"/' project.godot
-          grep -A2 '^\[rendering\]' project.godot
+          # 1) Апстрим работает на дефолтном Forward+; Web требует gl_compatibility.
+          # 2) Godot 4.7: Web-пресет с for_mobile и весь Android-экспорт требуют
+          #    включённого импорта ETC2/ASTC (иначе can_export() молча возвращает
+          #    "конфигурационные ошибки"). Включаем до шага импорта.
+          sed -i 's/^\[rendering\]$/[rendering]\nrenderer\/rendering_method.web="gl_compatibility"\nrendering\/textures\/vram_compression\/import_etc2_astc=true/' project.godot
+          grep -A4 '^\[rendering\]' project.godot
 
       - name: Generate export_presets.cfg (Web)
         run: |
@@ -180,6 +185,12 @@ jobs:
             unzip -oq /tmp/tpl.tpz -d "$HOME/.local/share/godot/export_templates"
             mv "$HOME/.local/share/godot/export_templates/templates" "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           fi
+
+      - name: Export-compat shim (ETC2/ASTC required for Android export in Godot 4.7)
+        run: |
+          set -euo pipefail
+          sed -i 's/^\[rendering\]$/[rendering]\nrendering\/textures\/vram_compression\/import_etc2_astc=true/' project.godot
+          grep -A2 '^\[rendering\]' project.godot
 
       - name: Generate export_presets.cfg (Android)
         run: |
